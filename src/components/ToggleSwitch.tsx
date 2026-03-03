@@ -22,7 +22,7 @@ const ToggleSwitch = ({ checked, onToggle }: ToggleSwitchProps) => {
       onClick={handleClick}
       className={cn(
         "relative h-8 w-14 rounded-full transition-colors duration-300",
-        loading ? "bg-muted-foreground/40" : checked ? "bg-success animate-pulse-glow" : "bg-border"
+        loading ? "bg-muted-foreground/40" : checked ? "bg-primary animate-pulse-glow" : "bg-border"
       )}
     >
       <div
