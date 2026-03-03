@@ -16,15 +16,15 @@ export interface Order {
 }
 
 const statusStyles = {
-  pending: "bg-primary-light text-primary",
-  accepted: "bg-info-light text-info",
-  preparing: "bg-warning-light text-warning",
-  completed: "bg-success-light text-success",
+  pending: "bg-warning/10 text-warning",
+  accepted: "bg-info/10 text-info",
+  preparing: "bg-warning/10 text-warning",
+  completed: "bg-primary/10 text-primary",
   rejected: "bg-destructive/10 text-destructive",
 };
 
 const riderIcons = {
-  assigned: { icon: UserCheck, className: "text-success", label: "Rider assigned" },
+  assigned: { icon: UserCheck, className: "text-primary", label: "Rider assigned" },
   unassigned: { icon: UserX, className: "text-destructive", label: "No rider" },
   enroute: { icon: Navigation, className: "text-warning", label: "Rider en route" },
 };
@@ -42,13 +42,13 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
   const RiderIcon = rider.icon;
 
   return (
-    <div className="rounded-2xl bg-card p-4 shadow-sm animate-fade-in-up">
+    <div className="rounded-2xl bg-card p-4 shadow-sm animate-fade-in-up border border-border/50 hover:border-primary/20 transition-colors">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-mono font-medium">{order.id}</span>
-            <span>•</span>
+            <span>·</span>
             <span>{order.customer}</span>
           </div>
           <p className="mt-0.5 text-sm font-semibold text-foreground">{order.item}</p>
@@ -70,7 +70,7 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
           <div className="flex items-center gap-3">
             <span className={cn(
               "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
-              order.type === "delivery" ? "bg-info-light text-info" : "bg-success-light text-success"
+              order.type === "delivery" ? "bg-info/10 text-info" : "bg-primary/10 text-primary"
             )}>
               {order.type === "delivery" ? <Truck size={10} /> : <ShoppingBag size={10} />}
               {order.type === "delivery" ? "Delivery" : "Pickup"}
@@ -98,13 +98,13 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
                 </span>
               )}
               {order.prepTimeLeft && (
-                <span className="ml-2 flex items-center gap-1 text-primary font-medium inline-flex">
+                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
                   <Clock size={10} />
-                  Preparing • {order.prepTimeLeft} left
+                  Preparing · {order.prepTimeLeft} left
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               {order.status === "pending" && (
                 <>
                   <button
@@ -115,7 +115,7 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
                   </button>
                   <button
                     onClick={() => onAccept?.(order.id)}
-                    className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground active:scale-95 transition-transform"
+                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20"
                   >
                     Accept
                   </button>
@@ -124,7 +124,7 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
               {order.status === "accepted" && (
                 <button
                   onClick={() => onMarkReady?.(order.id)}
-                  className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform"
+                  className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20"
                 >
                   Mark Ready
                 </button>

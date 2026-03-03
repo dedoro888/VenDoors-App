@@ -22,7 +22,7 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          light: "hsl(24 100% 95%)",
+          light: "hsl(152 100% 50% / 0.1)",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -35,17 +35,17 @@ export default {
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
-          light: "hsl(149 80% 95%)",
+          light: "hsl(152 100% 50% / 0.1)",
         },
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
-          light: "hsl(48 96% 89%)",
+          light: "hsl(38 92% 50% / 0.1)",
         },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
-          light: "hsl(214 95% 93%)",
+          light: "hsl(217 91% 60% / 0.1)",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import OrderCard, { Order } from "@/components/OrderCard";
+import OrderDetailModal from "@/components/OrderDetailModal";
 import { cn } from "@/lib/utils";
 
 const activeOrders: Order[] = [
@@ -69,11 +70,12 @@ const historyOrders: Order[] = [
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   return (
     <div className="pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-card px-5 pb-3 pt-12 shadow-sm">
+      <div className="sticky top-0 z-10 bg-card px-5 pb-3 pt-12 shadow-sm border-b border-border">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Orders</h1>
           <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted">
@@ -115,18 +117,31 @@ const Orders = () => {
       <div className="space-y-3 px-4 pt-4">
         {activeTab === "active"
           ? activeOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onAccept={(id) => console.log("Accept", id)}
-                onReject={(id) => console.log("Reject", id)}
-                onMarkReady={(id) => console.log("Mark Ready", id)}
-              />
+              <div key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
+                <OrderCard
+                  order={order}
+                  onAccept={(id) => console.log("Accept", id)}
+                  onReject={(id) => console.log("Reject", id)}
+                  onMarkReady={(id) => console.log("Mark Ready", id)}
+                />
+              </div>
             ))
           : historyOrders.map((order) => (
-              <OrderCard key={order.id} order={order} isHistory />
+              <div key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
+                <OrderCard order={order} isHistory />
+              </div>
             ))}
       </div>
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        order={selectedOrder}
+        open={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onAccept={(id) => console.log("Accept", id)}
+        onReject={(id) => console.log("Reject", id)}
+        onMarkReady={(id) => console.log("Mark Ready", id)}
+      />
     </div>
   );
 };
