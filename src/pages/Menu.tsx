@@ -1,48 +1,76 @@
 import { useState } from "react";
-import { Search, Plus, MoreVertical, Image as ImageIcon } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import type { MenuItem, MenuCategory } from "@/types/menu";
+import MenuItemCard from "@/components/MenuItemCard";
+import MenuActionSheet from "@/components/MenuActionSheet";
+import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 
-interface MenuItem {
-  id: string;
-  name: string;
-  price: string;
-  category: string;
-  available: boolean;
-  image?: string;
-}
-
-const menuItems: MenuItem[] = [
-  { id: "1", name: "Jollof Rice & Chicken", price: "₦3,500", category: "Rice Dishes", available: true },
-  { id: "2", name: "Pounded Yam & Egusi", price: "₦4,200", category: "Swallow", available: true },
-  { id: "3", name: "Small Chops Platter", price: "₦5,000", category: "Snacks", available: false },
-  { id: "4", name: "Fried Rice & Turkey", price: "₦4,500", category: "Rice Dishes", available: true },
-  { id: "5", name: "Amala & Gbegiri", price: "₦2,800", category: "Swallow", available: true },
-  { id: "6", name: "Pepper Soup", price: "₦3,000", category: "Soups", available: true },
+const mockItems: MenuItem[] = [
+  { id: "m1", vendorId: "v1", name: "Jollof Rice & Chicken", description: "Smoky party-style jollof with grilled chicken", price: 3500, category: "Rice", imageUrl: undefined, preparationTime: 20, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
+  { id: "m2", vendorId: "v1", name: "Fried Rice & Turkey", description: "Mixed vegetables fried rice with fried turkey", price: 4500, category: "Rice", imageUrl: undefined, preparationTime: 25, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
+  { id: "m3", vendorId: "v1", name: "Pounded Yam & Egusi", description: "Smooth pounded yam with melon soup", price: 4200, category: "Swallow", imageUrl: undefined, preparationTime: 30, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
+  { id: "m4", vendorId: "v1", name: "Amala & Gbegiri", description: "Soft amala with beans soup and ewedu", price: 2800, category: "Swallow", imageUrl: undefined, preparationTime: 20, isAvailable: false, isDeleted: false, createdAt: "", updatedAt: "" },
+  { id: "m5", vendorId: "v1", name: "Small Chops Platter", description: "Samosa, spring rolls, puff puff and more", price: 5000, category: "Snacks", imageUrl: undefined, preparationTime: 15, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
+  { id: "m6", vendorId: "v1", name: "Pepper Soup", description: "Spicy goat meat pepper soup", price: 3000, category: "Drinks", imageUrl: undefined, preparationTime: 15, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
 ];
 
-const categories = ["All", "Rice Dishes", "Swallow", "Snacks", "Soups"];
-
 const Menu = () => {
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [items, setItems] = useState(menuItems);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [items, setItems] = useState(mockItems);
+  const [search, setSearch] = useState("");
+  const [actionItem, setActionItem] = useState<MenuItem | null>(null);
+  const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
 
-  const filtered = selectedCategory === "All" ? items : items.filter((i) => i.category === selectedCategory);
+  const filtered = items
+    .filter((i) => !i.isDeleted)
+    .filter((i) => !search || i.name.toLowerCase().includes(search.toLowerCase()));
 
-  const toggleAvailability = (id: string) => {
+  // Group by category
+  const grouped = filtered.reduce<Record<string, MenuItem[]>>((acc, item) => {
+    (acc[item.category] = acc[item.category] || []).push(item);
+    return acc;
+  }, {});
+  const categories = Object.keys(grouped);
+  const singleCategory = categories.length <= 1;
+
+  const handleToggleAvailability = (item: MenuItem) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, available: !item.available } : item))
+      prev.map((i) => (i.id === item.id ? { ...i, isAvailable: !i.isAvailable } : i))
     );
+    toast({ title: item.isAvailable ? "Marked unavailable" : "Marked available" });
+  };
+
+  const handleDelete = (item: MenuItem) => {
+    setActionItem(null);
+    setDeleteItem(item);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteItem) return;
+    setItems((prev) => prev.map((i) => (i.id === deleteItem.id ? { ...i, isDeleted: true } : i)));
+    toast({ title: "Item deleted" });
+    setDeleteItem(null);
+  };
+
+  const handleEdit = (item: MenuItem) => {
+    navigate("/menu/edit", { state: { item } });
   };
 
   return (
     <div className="pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-card px-5 pb-3 pt-12 shadow-sm">
+      <div className="sticky top-0 z-10 bg-card px-5 pb-4 pt-12 shadow-sm border-b border-border">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Menu</h1>
-          <button className="flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-medium text-primary-foreground active:scale-95 transition-transform">
-            <Plus size={14} />
-            Add Item
+          <button
+            onClick={() => navigate("/menu/add")}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20"
+          >
+            <Plus size={20} />
           </button>
         </div>
 
@@ -51,67 +79,58 @@ const Menu = () => {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search menu items..."
-            className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+            className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
-
-        {/* Categories */}
-        <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={cn(
-                "shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                selectedCategory === cat
-                  ? "bg-secondary text-secondary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Menu Items */}
-      <div className="space-y-3 px-4 pt-4">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm active:scale-[0.98] transition-transform"
-          >
-            <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-muted">
-              <ImageIcon size={24} className="text-muted-foreground" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{item.name}</p>
-              <p className="text-xs text-muted-foreground">{item.category}</p>
-              <p className="mt-1 text-sm font-bold text-primary">{item.price}</p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <button className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-muted">
-                <MoreVertical size={16} className="text-muted-foreground" />
-              </button>
-              <button
-                onClick={() => toggleAvailability(item.id)}
-                className={cn(
-                  "relative h-7 w-12 rounded-full transition-colors duration-300",
-                  item.available ? "bg-success" : "bg-border"
-                )}
-              >
-                <div
-                  className={cn(
-                    "absolute top-[3px] left-[3px] h-[22px] w-[22px] rounded-full bg-card shadow transition-transform duration-300",
-                    item.available && "translate-x-5"
-                  )}
-                />
-              </button>
-            </div>
+      {/* Menu Items grouped by category */}
+      <div className="px-4 pt-2">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-sm text-muted-foreground">No menu items found</p>
           </div>
-        ))}
+        ) : (
+          categories.map((cat) => (
+            <div key={cat}>
+              {!singleCategory && (
+                <p className="mt-6 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{cat}</p>
+              )}
+              <div className={cn("space-y-3", singleCategory && "pt-3")}>
+                {grouped[cat].map((item) => (
+                  <MenuItemCard
+                    key={item.id}
+                    item={item}
+                    onTap={handleEdit}
+                    onThreeDot={setActionItem}
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </div>
+
+      {/* Action Sheet */}
+      <MenuActionSheet
+        item={actionItem}
+        open={!!actionItem}
+        onClose={() => setActionItem(null)}
+        onEdit={handleEdit}
+        onToggleAvailability={handleToggleAvailability}
+        onDelete={handleDelete}
+      />
+
+      {/* Delete Confirm */}
+      <DeleteConfirmModal
+        open={!!deleteItem}
+        itemName={deleteItem?.name ?? ""}
+        onClose={() => setDeleteItem(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

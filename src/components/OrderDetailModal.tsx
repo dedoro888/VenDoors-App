@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { X, Truck, ShoppingBag, UserCheck, UserX, Navigation, Clock, Phone, MapPin, MessageSquare, Timer, Users } from "lucide-react";
+import { X, Truck, ShoppingBag, UserCheck, UserX, Navigation, Clock, Phone, MessageSquare, Timer, Users, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Order } from "./OrderCard";
+import type { Order } from "@/types/order";
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -10,17 +10,19 @@ interface OrderDetailModalProps {
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
   onMarkReady?: (id: string) => void;
+  onAssignRider?: (orderId: string) => void;
 }
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   pending: "bg-warning/10 text-warning",
   accepted: "bg-info/10 text-info",
-  preparing: "bg-warning/10 text-warning",
+  ready: "bg-primary/10 text-primary",
   completed: "bg-primary/10 text-primary",
   rejected: "bg-destructive/10 text-destructive",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
-const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkReady }: OrderDetailModalProps) => {
+const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkReady, onAssignRider }: OrderDetailModalProps) => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [riderExpanded, setRiderExpanded] = useState(false);
 
@@ -34,30 +36,24 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
     onClose();
   };
 
-  // Simulated prep timer
-  const prepTotal = 20;
+  const prepTotal = order.prepTimeTotal ?? 20;
   const prepElapsed = order.prepTimeLeft ? prepTotal - parseInt(order.prepTimeLeft) : 0;
   const prepProgress = (prepElapsed / prepTotal) * 360;
   const isLate = order.prepTimeLeft && parseInt(order.prepTimeLeft) <= 2;
   const isHurry = order.prepTimeLeft && parseInt(order.prepTimeLeft) <= 5 && !isLate;
 
-  return (
-    <div
-      className={cn(
-        "fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-300",
-        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-      )}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+  const timelineSteps = ["pending", "accepted", "ready", "completed"];
 
-      {/* Modal Content */}
-      <div
-        className={cn(
-          "relative w-full max-w-md rounded-t-2xl bg-card max-h-[90vh] overflow-y-auto transition-transform duration-300",
-          open ? "translate-y-0" : "translate-y-full"
-        )}
-      >
+  return (
+    <div className={cn(
+      "fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-300",
+      open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+    )}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className={cn(
+        "relative w-full max-w-md rounded-t-2xl bg-card max-h-[90vh] overflow-y-auto transition-transform duration-300",
+        open ? "translate-y-0" : "translate-y-full"
+      )}>
         {/* Handle */}
         <div className="sticky top-0 z-10 bg-card pt-3 pb-2 px-5">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted-foreground/30" />
@@ -77,22 +73,19 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
         <div className="px-5 pb-6 space-y-4">
           {/* Status Timeline */}
           <div className="flex items-center gap-2 py-2">
-            {["pending", "accepted", "preparing", "completed"].map((step, i) => {
-              const steps = ["pending", "accepted", "preparing", "completed"];
-              const currentIdx = steps.indexOf(order.status);
+            {timelineSteps.map((step, i) => {
+              const currentIdx = timelineSteps.indexOf(order.orderStatus);
               const isCompleted = i < currentIdx;
               const isActive = i === currentIdx;
               return (
                 <div key={step} className="flex flex-1 items-center gap-2">
-                  <div
-                    className={cn(
-                      "h-2 w-2 rounded-full shrink-0",
-                      isCompleted && "bg-primary",
-                      isActive && "bg-primary shadow-[0_0_0_4px] shadow-primary/20",
-                      !isCompleted && !isActive && "bg-muted-foreground/30"
-                    )}
-                  />
-                  {i < steps.length - 1 && (
+                  <div className={cn(
+                    "h-2 w-2 rounded-full shrink-0",
+                    isCompleted && "bg-primary",
+                    isActive && "bg-primary shadow-[0_0_0_4px] shadow-primary/20",
+                    !isCompleted && !isActive && "bg-muted-foreground/30"
+                  )} />
+                  {i < timelineSteps.length - 1 && (
                     <div className={cn("flex-1 h-0.5", isCompleted ? "bg-primary" : "bg-muted-foreground/20")} />
                   )}
                 </div>
@@ -107,8 +100,8 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
                 <p className="text-base font-bold text-foreground">{order.item}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{order.quantity}</p>
               </div>
-              <span className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize", statusStyles[order.status])}>
-                {order.status}
+              <span className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize", statusStyles[order.orderStatus])}>
+                {order.orderStatus}
               </span>
             </div>
             <div className="h-px bg-border" />
@@ -122,10 +115,13 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
                 {order.type === "delivery" ? "Delivery" : "Pickup"}
               </span>
             </div>
+            {order.scheduleDate && (
+              <p className="text-xs text-muted-foreground">Scheduled: {order.scheduleDate}</p>
+            )}
           </div>
 
           {/* Preparation Timer */}
-          {order.prepTimeLeft && order.status === "accepted" && (
+          {order.prepTimeLeft && order.orderStatus === "accepted" && (
             <div className={cn(
               "rounded-2xl border-2 p-4",
               isLate ? "border-destructive/30 bg-destructive/5" : isHurry ? "border-warning/30 bg-warning/5" : "border-primary/30 bg-primary/5"
@@ -133,9 +129,7 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
               <div className="flex items-center gap-4">
                 <div
                   className="relative h-20 w-20 shrink-0 rounded-full flex items-center justify-center"
-                  style={{
-                    background: `conic-gradient(${isLate ? 'hsl(0 84% 60%)' : isHurry ? 'hsl(38 92% 50%)' : 'hsl(152 100% 50%)'} ${prepProgress}deg, hsl(var(--muted)) 0deg)`
-                  }}
+                  style={{ background: `conic-gradient(${isLate ? 'hsl(0 84% 60%)' : isHurry ? 'hsl(38 92% 50%)' : 'hsl(152 100% 50%)'} ${prepProgress}deg, hsl(var(--muted)) 0deg)` }}
                 >
                   <div className="absolute h-16 w-16 rounded-full bg-card shadow-inner" />
                   <div className="relative z-10 text-center">
@@ -145,9 +139,7 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Timer size={14} className={cn(
-                      isLate ? "text-destructive" : isHurry ? "text-warning" : "text-primary"
-                    )} />
+                    <Timer size={14} className={isLate ? "text-destructive" : isHurry ? "text-warning" : "text-primary"} />
                     <span className="text-sm font-semibold text-foreground">Preparation Timer</span>
                   </div>
                   <span className={cn(
@@ -173,24 +165,28 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
                 {order.riderStatus === "assigned" && <UserCheck size={18} className="text-primary" />}
                 {order.riderStatus === "unassigned" && <UserX size={18} className="text-destructive" />}
                 {order.riderStatus === "enroute" && <Navigation size={18} className="text-warning" />}
+                {order.riderStatus === "pickedup" && <Navigation size={18} className="text-primary" />}
+                {order.riderStatus === "delivered" && <UserCheck size={18} className="text-primary" />}
                 <div>
                   <p className="text-sm font-medium text-foreground">
                     {order.riderStatus === "assigned" && "Rider Assigned"}
                     {order.riderStatus === "unassigned" && "No Rider Yet"}
                     {order.riderStatus === "enroute" && "Rider En Route"}
+                    {order.riderStatus === "pickedup" && "Order Picked Up"}
+                    {order.riderStatus === "delivered" && "Delivered"}
                   </p>
                   <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                     <span className={cn(
                       "h-1.5 w-1.5 rounded-full",
-                      order.riderStatus === "assigned" && "bg-primary animate-live-pulse",
+                      (order.riderStatus === "assigned" || order.riderStatus === "delivered") && "bg-primary animate-live-pulse",
                       order.riderStatus === "unassigned" && "bg-destructive",
-                      order.riderStatus === "enroute" && "bg-warning animate-live-pulse"
+                      (order.riderStatus === "enroute" || order.riderStatus === "pickedup") && "bg-warning animate-live-pulse"
                     )} />
                     Live status
                   </div>
                 </div>
               </div>
-              <ChevronIcon rotated={riderExpanded} />
+              <ChevronDown size={16} className={cn("text-muted-foreground transition-transform duration-300", riderExpanded && "rotate-180")} />
             </div>
 
             {riderExpanded && order.riderStatus !== "unassigned" && (
@@ -202,9 +198,12 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
               </div>
             )}
 
-            {order.riderStatus === "unassigned" && order.prepTimeLeft && (
+            {order.riderStatus === "unassigned" && order.orderStatus === "accepted" && (
               <div className="mt-3 pt-3 border-t border-border animate-fade-in-up">
-                <div className="inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-lg shadow-secondary/20">
+                <div
+                  onClick={(e) => { e.stopPropagation(); onAssignRider?.(order.id); }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-lg shadow-secondary/20 active:scale-95 transition-transform"
+                >
                   <Users size={14} />
                   Appoint Rider
                 </div>
@@ -218,7 +217,9 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
               <MessageSquare size={14} className="text-muted-foreground" />
               <span className="text-xs font-semibold text-foreground">Special Instructions</span>
             </div>
-            <p className="text-xs text-muted-foreground italic">No special instructions for this order.</p>
+            <p className="text-xs text-muted-foreground italic">
+              {order.specialInstructions || "No special instructions for this order."}
+            </p>
           </div>
 
           {/* Timestamp */}
@@ -227,7 +228,7 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
               <Clock size={12} />
               Ordered {order.orderedAt}
             </span>
-            {order.expiresIn && (
+            {order.expiresIn && order.orderStatus === "pending" && (
               <span className="font-semibold text-destructive animate-pulse-red">
                 Expires in {order.expiresIn}
               </span>
@@ -235,7 +236,7 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
           </div>
 
           {/* Action Buttons */}
-          {order.status === "pending" && (
+          {order.orderStatus === "pending" && (
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => handleAction("reject", onReject)}
@@ -254,7 +255,7 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
             </div>
           )}
 
-          {order.status === "accepted" && (
+          {order.orderStatus === "accepted" && (
             <button
               onClick={() => handleAction("ready", onMarkReady)}
               disabled={!!actionLoading}
@@ -268,22 +269,6 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
     </div>
   );
 };
-
-const ChevronIcon = ({ rotated }: { rotated: boolean }) => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={cn("text-muted-foreground transition-transform duration-300", rotated && "rotate-180")}
-  >
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
 
 const LoadingSpinner = () => (
   <div className="mx-auto h-4 w-4 rounded-full border-2 border-current/30 border-t-current animate-spin" />
