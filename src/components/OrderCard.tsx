@@ -1,32 +1,24 @@
 import { cn } from "@/lib/utils";
 import { Truck, ShoppingBag, UserCheck, UserX, Navigation, Clock } from "lucide-react";
+import type { Order } from "@/types/order";
 
-export interface Order {
-  id: string;
-  customer: string;
-  item: string;
-  status: "pending" | "accepted" | "preparing" | "completed" | "rejected";
-  amount: string;
-  quantity: string;
-  type: "delivery" | "pickup";
-  riderStatus: "assigned" | "unassigned" | "enroute";
-  orderedAt: string;
-  expiresIn?: string;
-  prepTimeLeft?: string;
-}
+export type { Order };
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   pending: "bg-warning/10 text-warning",
   accepted: "bg-info/10 text-info",
-  preparing: "bg-warning/10 text-warning",
+  ready: "bg-primary/10 text-primary",
   completed: "bg-primary/10 text-primary",
   rejected: "bg-destructive/10 text-destructive",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
 const riderIcons = {
   assigned: { icon: UserCheck, className: "text-primary", label: "Rider assigned" },
   unassigned: { icon: UserX, className: "text-destructive", label: "No rider" },
   enroute: { icon: Navigation, className: "text-warning", label: "Rider en route" },
+  pickedup: { icon: Navigation, className: "text-primary", label: "Picked up" },
+  delivered: { icon: UserCheck, className: "text-primary", label: "Delivered" },
 };
 
 interface OrderCardProps {
@@ -35,9 +27,10 @@ interface OrderCardProps {
   onReject?: (id: string) => void;
   onMarkReady?: (id: string) => void;
   isHistory?: boolean;
+  actionLoading?: string | null;
 }
 
-const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderCardProps) => {
+const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory, actionLoading }: OrderCardProps) => {
   const rider = riderIcons[order.riderStatus];
   const RiderIcon = rider.icon;
 
@@ -53,8 +46,8 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
           </div>
           <p className="mt-0.5 text-sm font-semibold text-foreground">{order.item}</p>
         </div>
-        <span className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize", statusStyles[order.status])}>
-          {order.status}
+        <span className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize", statusStyles[order.orderStatus])}>
+          {order.orderStatus}
         </span>
       </div>
 
@@ -92,41 +85,49 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
           <div className="flex items-center justify-between">
             <div className="text-[10px] text-muted-foreground">
               <span>Ordered {order.orderedAt}</span>
-              {order.expiresIn && (
+              {order.expiresIn && order.orderStatus === "pending" && (
                 <span className="ml-2 font-semibold text-destructive animate-pulse-red">
                   Expires in {order.expiresIn}
                 </span>
               )}
-              {order.prepTimeLeft && (
+              {order.prepTimeLeft && order.orderStatus === "accepted" && (
                 <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
                   <Clock size={10} />
                   Preparing · {order.prepTimeLeft} left
                 </span>
               )}
+              {order.orderStatus === "ready" && (
+                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
+                  Ready for Pickup
+                </span>
+              )}
             </div>
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-              {order.status === "pending" && (
+              {order.orderStatus === "pending" && (
                 <>
                   <button
                     onClick={() => onReject?.(order.id)}
-                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground active:scale-95 transition-transform"
+                    disabled={!!actionLoading}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground active:scale-95 transition-transform disabled:opacity-50"
                   >
-                    Reject
+                    {actionLoading === `reject-${order.id}` ? <LoadingSpinner /> : "Reject"}
                   </button>
                   <button
                     onClick={() => onAccept?.(order.id)}
-                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20"
+                    disabled={!!actionLoading}
+                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20 disabled:opacity-50"
                   >
-                    Accept
+                    {actionLoading === `accept-${order.id}` ? <LoadingSpinner /> : "Accept"}
                   </button>
                 </>
               )}
-              {order.status === "accepted" && (
+              {order.orderStatus === "accepted" && (
                 <button
                   onClick={() => onMarkReady?.(order.id)}
-                  className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20"
+                  disabled={!!actionLoading}
+                  className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground active:scale-95 transition-transform shadow-lg shadow-primary/20 disabled:opacity-50"
                 >
-                  Mark Ready
+                  {actionLoading === `ready-${order.id}` ? <LoadingSpinner /> : "Mark Ready"}
                 </button>
               )}
             </div>
@@ -136,5 +137,9 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory }: OrderC
     </div>
   );
 };
+
+const LoadingSpinner = () => (
+  <div className="mx-auto h-4 w-4 rounded-full border-2 border-current/30 border-t-current animate-spin" />
+);
 
 export default OrderCard;

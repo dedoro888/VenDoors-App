@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
+import AddEditItem from "./pages/AddEditItem";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
@@ -23,6 +24,8 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/menu" element={<Menu />} />
+            <Route path="/menu/add" element={<AddEditItem />} />
+            <Route path="/menu/edit" element={<AddEditItem />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
