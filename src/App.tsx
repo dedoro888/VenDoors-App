@@ -8,6 +8,11 @@ import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
 import AddEditItem from "./pages/AddEditItem";
 import Profile from "./pages/Profile";
+import StoreSettings from "./pages/StoreSettings";
+import OperatingHours from "./pages/OperatingHours";
+import PayoutSettings from "./pages/PayoutSettings";
+import HelpSupport from "./pages/HelpSupport";
+import AppSettings from "./pages/AppSettings";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 
@@ -27,6 +32,11 @@ const App = () => (
             <Route path="/menu/add" element={<AddEditItem />} />
             <Route path="/menu/edit" element={<AddEditItem />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/store-settings" element={<StoreSettings />} />
+            <Route path="/profile/operating-hours" element={<OperatingHours />} />
+            <Route path="/profile/payout-settings" element={<PayoutSettings />} />
+            <Route path="/profile/help-support" element={<HelpSupport />} />
+            <Route path="/profile/app-settings" element={<AppSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />
