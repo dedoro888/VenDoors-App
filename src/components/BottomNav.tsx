@@ -1,4 +1,4 @@
-import { Home, ClipboardList, UtensilsCrossed, User } from "lucide-react";
+import { Home, ClipboardList, UtensilsCrossed, Wallet, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,7 @@ const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: ClipboardList, label: "Orders", path: "/orders" },
   { icon: UtensilsCrossed, label: "Menu", path: "/menu" },
+  { icon: Wallet, label: "Earnings", path: "/earnings" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 

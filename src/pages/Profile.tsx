@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/contexts/StoreContext";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +39,7 @@ const menuSections = [
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [storeOpen, setStoreOpen] = useState(true);
+  const { storeOpen, setStoreOpen } = useStore();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
 
