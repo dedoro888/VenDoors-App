@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Bell, ChevronDown, ChevronRight, Package, DollarSign, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
 import ToggleSwitch from "@/components/ToggleSwitch";
 import WeeklyChart from "@/components/WeeklyChart";
+import { useStore } from "@/contexts/StoreContext";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
-  const [storeOpen, setStoreOpen] = useState(true);
+  const { storeOpen, setStoreOpen } = useStore();
   const [weeklyExpanded, setWeeklyExpanded] = useState(false);
   const [showAlerts, setShowAlerts] = useState(true);
 
