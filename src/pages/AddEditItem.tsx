@@ -66,8 +66,10 @@ const AddEditItem = () => {
   };
 
   const addSide = () => {
-    if (!newSideName.trim() || !newSidePrice) return;
-    setSides((prev) => [...prev, { id: `side-${Date.now()}`, name: newSideName.trim(), price: Number(newSidePrice) }]);
+    const trimmedName = newSideName.trim();
+    const parsedPrice = Number(newSidePrice);
+    if (!trimmedName || !newSidePrice || parsedPrice <= 0) return;
+    setSides((prev) => [...prev, { id: `side-${Date.now()}`, name: trimmedName, price: parsedPrice }]);
     setNewSideName("");
     setNewSidePrice("");
   };
