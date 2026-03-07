@@ -197,13 +197,35 @@ const AddEditItem = () => {
             </div>
           )}
 
-          <div className="flex gap-2">
-            <input value={newSideName} onChange={(e) => setNewSideName(e.target.value)} placeholder="Side name" className="flex-1 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
-            <div className="relative w-24">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₦</span>
-              <input type="number" inputMode="numeric" value={newSidePrice} onChange={(e) => setNewSidePrice(e.target.value.replace(/[^0-9]/g, ""))} placeholder="0" className="w-full rounded-lg border border-border bg-muted pl-6 pr-2 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all" />
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-[10px] text-muted-foreground mb-1 block">Side Name</label>
+              <input
+                value={newSideName}
+                onChange={(e) => setNewSideName(e.target.value)}
+                placeholder="e.g. Plantain"
+                className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+              />
             </div>
-            <button onClick={addSide} disabled={!newSideName.trim() || !newSidePrice} className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground disabled:opacity-40 active:scale-95 transition-all">
+            <div className="w-28">
+              <label className="text-[10px] text-muted-foreground mb-1 block">Price (₦)</label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₦</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={newSidePrice}
+                  onChange={(e) => setNewSidePrice(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="0"
+                  className="w-full rounded-lg border border-border bg-muted pl-7 pr-2 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+            </div>
+            <button
+              onClick={addSide}
+              disabled={!newSideName.trim() || !newSidePrice || Number(newSidePrice) <= 0}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground disabled:opacity-40 active:scale-95 transition-all"
+            >
               <Plus size={16} />
             </button>
           </div>
