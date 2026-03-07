@@ -14,6 +14,10 @@ const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const hideNav = location.pathname === "/";
+
+  if (hideNav) return null;
+
   return (
     <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 backdrop-blur-md">
       <div className="flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
