@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Bell, ChevronDown, ChevronRight, Package, DollarSign, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ToggleSwitch from "@/components/ToggleSwitch";
 import WeeklyChart from "@/components/WeeklyChart";
 import { useStore } from "@/contexts/StoreContext";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { storeOpen, setStoreOpen } = useStore();
-  const [weeklyExpanded, setWeeklyExpanded] = useState(false);
+  const [weeklyExpanded, setWeeklyExpanded] = useState(true);
   const [showAlerts, setShowAlerts] = useState(true);
 
   const alerts = [
@@ -17,6 +19,7 @@ const Dashboard = () => {
       subtitle: "New delivery requests from Yaba",
       time: "2 mins ago",
       type: "pending" as const,
+      path: "/orders",
     },
     {
       icon: CheckCircle,
@@ -24,6 +27,7 @@ const Dashboard = () => {
       subtitle: "₦125,000 deposited to your account",
       time: "3 hours ago",
       type: "payout" as const,
+      path: "/profile/payout-settings",
     },
     {
       icon: Info,
@@ -31,6 +35,7 @@ const Dashboard = () => {
       subtitle: "Weekend schedule needs confirmation",
       time: "Yesterday",
       type: "reminder" as const,
+      path: "/profile/operating-hours",
     },
   ];
 
@@ -81,7 +86,6 @@ const Dashboard = () => {
       {/* Today's Performance */}
       <div className="px-4 mt-5">
         <p className="mb-3 text-sm font-semibold text-foreground">Today's Performance</p>
-
         <div className="grid grid-cols-2 gap-3">
           <div className="animate-fade-in-up stagger-1 rounded-2xl bg-card p-4 shadow-sm active:scale-[0.98] transition-transform">
             <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -91,19 +95,15 @@ const Dashboard = () => {
             <p className="text-xs font-medium text-foreground">Orders Today</p>
             <p className="text-[10px] text-muted-foreground">Completed & Accepted</p>
           </div>
-
           <div className="animate-fade-in-up stagger-2 rounded-2xl bg-card p-4 shadow-sm active:scale-[0.98] transition-transform">
             <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-success/10">
               <DollarSign size={18} className="text-success" />
             </div>
-            <p className="text-2xl font-bold text-foreground tabular-nums">
-              ₦<span>0</span>
-            </p>
+            <p className="text-2xl font-bold text-foreground tabular-nums">₦<span>0</span></p>
             <p className="text-xs font-medium text-foreground">Revenue Today</p>
             <p className="text-[10px] text-muted-foreground">Before commission</p>
           </div>
         </div>
-
         <div className="mt-3 animate-fade-in-up stagger-3 rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -122,39 +122,33 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Weekly Summary */}
+      {/* Weekly Summary — expanded by default, prominent */}
       <div className="px-4 mt-5">
-        <div className="rounded-2xl bg-card shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-card shadow-sm overflow-hidden border border-border/50">
           <button
             onClick={() => setWeeklyExpanded(!weeklyExpanded)}
             className="flex w-full items-center justify-between p-4"
           >
             <div>
-              <p className="text-sm font-semibold text-foreground">Weekly Summary</p>
-              <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
-                <span>
-                  Total Orders <span className="font-semibold text-foreground">29</span>
-                </span>
-                <span>
-                  Total Revenue <span className="font-semibold text-foreground">₦284K</span>
-                </span>
+              <p className="text-base font-bold text-foreground">Weekly Summary</p>
+              <div className="mt-1.5 flex gap-4">
+                <div>
+                  <span className="text-xs text-muted-foreground">Orders </span>
+                  <span className="text-sm font-bold text-foreground">29</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Revenue </span>
+                  <span className="text-sm font-bold text-primary">₦284K</span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs text-primary font-medium">
-              View Breakdown
-              <ChevronDown
-                size={14}
-                className={cn("transition-transform duration-300", weeklyExpanded && "rotate-180")}
-              />
+              {weeklyExpanded ? "Collapse" : "Expand"}
+              <ChevronDown size={14} className={cn("transition-transform duration-300", weeklyExpanded && "rotate-180")} />
             </div>
           </button>
 
-          <div
-            className={cn(
-              "overflow-hidden transition-all duration-300",
-              weeklyExpanded ? "max-h-[300px] pb-4" : "max-h-0"
-            )}
-          >
+          <div className={cn("overflow-hidden transition-all duration-300", weeklyExpanded ? "max-h-[300px] pb-4" : "max-h-0")}>
             <div className="px-4">
               <WeeklyChart />
             </div>
@@ -166,10 +160,7 @@ const Dashboard = () => {
       <div className="px-4 mt-5">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">Alerts</p>
-          <button
-            onClick={() => setShowAlerts(!showAlerts)}
-            className="text-xs text-primary font-medium"
-          >
+          <button onClick={() => setShowAlerts(!showAlerts)} className="text-xs text-primary font-medium">
             {showAlerts ? "Hide" : "Show"}
           </button>
         </div>
@@ -177,10 +168,11 @@ const Dashboard = () => {
         {showAlerts ? (
           <div className="space-y-3">
             {alerts.map((alert, i) => (
-              <div
+              <button
                 key={i}
+                onClick={() => navigate(alert.path)}
                 className={cn(
-                  "animate-fade-in-up flex items-start gap-3 rounded-xl p-3",
+                  "animate-fade-in-up flex w-full items-start gap-3 rounded-xl p-3 text-left active:scale-[0.98] transition-transform",
                   alertStyles[alert.type],
                   i === 0 && "stagger-1",
                   i === 1 && "stagger-2",
@@ -199,10 +191,8 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">{alert.subtitle}</p>
                   <p className="mt-1 text-[10px] text-muted-foreground">{alert.time}</p>
                 </div>
-                {alert.type === "pending" && (
-                  <ChevronRight size={16} className="mt-1 text-muted-foreground" />
-                )}
-              </div>
+                <ChevronRight size={16} className="mt-1 text-muted-foreground" />
+              </button>
             ))}
           </div>
         ) : (

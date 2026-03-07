@@ -1,39 +1,24 @@
-import { Edit3, ToggleLeft, ToggleRight, Trash2, X } from "lucide-react";
+import { Edit3, ToggleLeft, ToggleRight, Trash2, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { MenuItem } from "@/types/menu";
+import type { AvailabilityStatus, MenuItem } from "@/types/menu";
 
 interface MenuActionSheetProps {
   item: MenuItem | null;
   open: boolean;
   onClose: () => void;
   onEdit: (item: MenuItem) => void;
-  onToggleAvailability: (item: MenuItem) => void;
+  onSetAvailability: (item: MenuItem, status: AvailabilityStatus) => void;
   onDelete: (item: MenuItem) => void;
 }
 
-const MenuActionSheet = ({ item, open, onClose, onEdit, onToggleAvailability, onDelete }: MenuActionSheetProps) => {
+const MenuActionSheet = ({ item, open, onClose, onEdit, onSetAvailability, onDelete }: MenuActionSheetProps) => {
   if (!item) return null;
 
-  const actions = [
-    {
-      icon: Edit3,
-      label: "Edit Item",
-      onClick: () => { onEdit(item); onClose(); },
-      className: "text-foreground",
-    },
-    {
-      icon: item.isAvailable ? ToggleLeft : ToggleRight,
-      label: item.isAvailable ? "Mark as Unavailable" : "Mark as Available",
-      onClick: () => { onToggleAvailability(item); onClose(); },
-      className: item.isAvailable ? "text-warning" : "text-primary",
-    },
-    {
-      icon: Trash2,
-      label: "Delete Item",
-      onClick: () => { onDelete(item); onClose(); },
-      className: "text-destructive",
-    },
-  ];
+  const availabilityActions = [
+    { status: "available" as const, label: "Mark as Available", show: item.availability !== "available", className: "text-primary" },
+    { status: "unavailable" as const, label: "Mark as Unavailable", show: item.availability !== "unavailable", className: "text-destructive" },
+    { status: "pre-order" as const, label: "Mark as Pre-Order", show: item.availability !== "pre-order", className: "text-warning" },
+  ].filter((a) => a.show);
 
   return (
     <div
@@ -56,16 +41,41 @@ const MenuActionSheet = ({ item, open, onClose, onEdit, onToggleAvailability, on
           </button>
         </div>
         <div className="px-3 pb-2">
-          {actions.map((action) => (
+          {/* Edit */}
+          <button
+            onClick={() => { onEdit(item); onClose(); }}
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left active:bg-muted/50 transition-colors"
+          >
+            <Edit3 size={18} className="text-foreground" />
+            <span className="text-sm font-medium text-foreground">Edit Item</span>
+          </button>
+
+          {/* Availability options */}
+          {availabilityActions.map((action) => (
             <button
-              key={action.label}
-              onClick={action.onClick}
+              key={action.status}
+              onClick={() => { onSetAvailability(item, action.status); onClose(); }}
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left active:bg-muted/50 transition-colors"
             >
-              <action.icon size={18} className={action.className} />
+              {action.status === "pre-order" ? (
+                <Clock size={18} className={action.className} />
+              ) : action.status === "available" ? (
+                <ToggleRight size={18} className={action.className} />
+              ) : (
+                <ToggleLeft size={18} className={action.className} />
+              )}
               <span className={cn("text-sm font-medium", action.className)}>{action.label}</span>
             </button>
           ))}
+
+          {/* Delete */}
+          <button
+            onClick={() => { onDelete(item); onClose(); }}
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left active:bg-muted/50 transition-colors"
+          >
+            <Trash2 size={18} className="text-destructive" />
+            <span className="text-sm font-medium text-destructive">Delete Item</span>
+          </button>
         </div>
       </div>
     </div>
