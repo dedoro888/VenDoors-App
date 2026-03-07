@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { StoreProvider } from "@/contexts/StoreContext";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
@@ -29,7 +30,8 @@ const App = () => (
         <BrowserRouter>
           <div className="mx-auto max-w-md min-h-screen bg-background">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Onboarding />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/menu" element={<Menu />} />
               <Route path="/menu/add" element={<AddEditItem />} />

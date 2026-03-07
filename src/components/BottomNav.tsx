@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { icon: Home, label: "Home", path: "/" },
+  { icon: Home, label: "Home", path: "/dashboard" },
   { icon: ClipboardList, label: "Orders", path: "/orders" },
   { icon: UtensilsCrossed, label: "Menu", path: "/menu" },
   { icon: Wallet, label: "Earnings", path: "/earnings" },
@@ -13,6 +13,10 @@ const navItems = [
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const hideNav = location.pathname === "/";
+
+  if (hideNav) return null;
 
   return (
     <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 backdrop-blur-md">
