@@ -30,8 +30,8 @@ const App = () => (
         <BrowserRouter>
           <div className="mx-auto max-w-md min-h-screen bg-background">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/orders" element={<Orders />} />
+              <Route path="/" element={<Onboarding />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/menu" element={<Menu />} />
               <Route path="/menu/add" element={<AddEditItem />} />
               <Route path="/menu/edit" element={<AddEditItem />} />
