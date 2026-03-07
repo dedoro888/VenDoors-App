@@ -31,6 +31,7 @@ interface OrderCardProps {
 }
 
 const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory, actionLoading }: OrderCardProps) => {
+  const isPickup = order.type === "pickup";
   const rider = riderIcons[order.riderStatus];
   const RiderIcon = rider.icon;
 
@@ -68,10 +69,13 @@ const OrderCard = ({ order, onAccept, onReject, onMarkReady, isHistory, actionLo
               {order.type === "delivery" ? <Truck size={10} /> : <ShoppingBag size={10} />}
               {order.type === "delivery" ? "Delivery" : "Pickup"}
             </span>
-            <span className={cn("flex items-center gap-1 text-[10px] font-medium", rider.className)}>
-              <RiderIcon size={10} />
-              {rider.label}
-            </span>
+            {/* Hide rider status for pickup orders */}
+            {!isPickup && (
+              <span className={cn("flex items-center gap-1 text-[10px] font-medium", rider.className)}>
+                <RiderIcon size={10} />
+                {rider.label}
+              </span>
+            )}
           </div>
         ) : (
           <span className="text-xs text-muted-foreground capitalize">{order.type}</span>

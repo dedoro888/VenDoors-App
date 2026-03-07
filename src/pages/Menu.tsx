@@ -3,18 +3,18 @@ import { Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import type { MenuItem, MenuCategory } from "@/types/menu";
+import type { MenuItem, AvailabilityStatus } from "@/types/menu";
 import MenuItemCard from "@/components/MenuItemCard";
 import MenuActionSheet from "@/components/MenuActionSheet";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 
 const mockItems: MenuItem[] = [
-  { id: "m1", vendorId: "v1", name: "Jollof Rice & Chicken", description: "Smoky party-style jollof with grilled chicken", price: 3500, category: "Rice", imageUrl: undefined, preparationTime: 20, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
-  { id: "m2", vendorId: "v1", name: "Fried Rice & Turkey", description: "Mixed vegetables fried rice with fried turkey", price: 4500, category: "Rice", imageUrl: undefined, preparationTime: 25, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
-  { id: "m3", vendorId: "v1", name: "Pounded Yam & Egusi", description: "Smooth pounded yam with melon soup", price: 4200, category: "Swallow", imageUrl: undefined, preparationTime: 30, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
-  { id: "m4", vendorId: "v1", name: "Amala & Gbegiri", description: "Soft amala with beans soup and ewedu", price: 2800, category: "Swallow", imageUrl: undefined, preparationTime: 20, isAvailable: false, isDeleted: false, createdAt: "", updatedAt: "" },
-  { id: "m5", vendorId: "v1", name: "Small Chops Platter", description: "Samosa, spring rolls, puff puff and more", price: 5000, category: "Snacks", imageUrl: undefined, preparationTime: 15, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
-  { id: "m6", vendorId: "v1", name: "Pepper Soup", description: "Spicy goat meat pepper soup", price: 3000, category: "Drinks", imageUrl: undefined, preparationTime: 15, isAvailable: true, isDeleted: false, createdAt: "", updatedAt: "" },
+  { id: "m1", vendorId: "v1", name: "Jollof Rice & Chicken", description: "Smoky party-style jollof with grilled chicken", price: 3500, category: "Rice", imageUrl: undefined, preparationTime: 20, availability: "available", isAvailable: true, isDeleted: false, sides: [{ id: "s1", name: "Plantain", price: 300 }, { id: "s2", name: "Coleslaw", price: 200 }], stockCount: 15, createdAt: "", updatedAt: "" },
+  { id: "m2", vendorId: "v1", name: "Fried Rice & Turkey", description: "Mixed vegetables fried rice with fried turkey", price: 4500, category: "Rice", imageUrl: undefined, preparationTime: 25, availability: "available", isAvailable: true, isDeleted: false, sides: [], createdAt: "", updatedAt: "" },
+  { id: "m3", vendorId: "v1", name: "Pounded Yam & Egusi", description: "Smooth pounded yam with melon soup", price: 4200, category: "Swallow", imageUrl: undefined, preparationTime: 30, availability: "pre-order", isAvailable: true, isDeleted: false, sides: [{ id: "s3", name: "Extra Meat", price: 500 }], createdAt: "", updatedAt: "" },
+  { id: "m4", vendorId: "v1", name: "Amala & Gbegiri", description: "Soft amala with beans soup and ewedu", price: 2800, category: "Swallow", imageUrl: undefined, preparationTime: 20, availability: "unavailable", isAvailable: false, isDeleted: false, sides: [], stockCount: 0, createdAt: "", updatedAt: "" },
+  { id: "m5", vendorId: "v1", name: "Small Chops Platter", description: "Samosa, spring rolls, puff puff and more", price: 5000, category: "Snacks", imageUrl: undefined, preparationTime: 15, availability: "available", isAvailable: true, isDeleted: false, sides: [], createdAt: "", updatedAt: "" },
+  { id: "m6", vendorId: "v1", name: "Pepper Soup", description: "Spicy goat meat pepper soup", price: 3000, category: "Drinks", imageUrl: undefined, preparationTime: 15, availability: "available", isAvailable: true, isDeleted: false, sides: [], createdAt: "", updatedAt: "" },
 ];
 
 const Menu = () => {
@@ -29,7 +29,6 @@ const Menu = () => {
     .filter((i) => !i.isDeleted)
     .filter((i) => !search || i.name.toLowerCase().includes(search.toLowerCase()));
 
-  // Group by category
   const grouped = filtered.reduce<Record<string, MenuItem[]>>((acc, item) => {
     (acc[item.category] = acc[item.category] || []).push(item);
     return acc;
@@ -37,11 +36,16 @@ const Menu = () => {
   const categories = Object.keys(grouped);
   const singleCategory = categories.length <= 1;
 
-  const handleToggleAvailability = (item: MenuItem) => {
+  const handleSetAvailability = (item: MenuItem, status: AvailabilityStatus) => {
     setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, isAvailable: !i.isAvailable } : i))
+      prev.map((i) =>
+        i.id === item.id
+          ? { ...i, availability: status, isAvailable: status !== "unavailable" }
+          : i
+      )
     );
-    toast({ title: item.isAvailable ? "Marked unavailable" : "Marked available" });
+    const labels = { available: "Available", unavailable: "Unavailable", "pre-order": "Pre-Order" };
+    toast({ title: `Marked as ${labels[status]}` });
   };
 
   const handleDelete = (item: MenuItem) => {
@@ -73,8 +77,6 @@ const Menu = () => {
             <Plus size={20} />
           </button>
         </div>
-
-        {/* Search */}
         <div className="relative mt-3">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -87,7 +89,6 @@ const Menu = () => {
         </div>
       </div>
 
-      {/* Menu Items grouped by category */}
       <div className="px-4 pt-2">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -101,12 +102,7 @@ const Menu = () => {
               )}
               <div className={cn("space-y-3", singleCategory && "pt-3")}>
                 {grouped[cat].map((item) => (
-                  <MenuItemCard
-                    key={item.id}
-                    item={item}
-                    onTap={handleEdit}
-                    onThreeDot={setActionItem}
-                  />
+                  <MenuItemCard key={item.id} item={item} onTap={handleEdit} onThreeDot={setActionItem} />
                 ))}
               </div>
             </div>
@@ -114,17 +110,15 @@ const Menu = () => {
         )}
       </div>
 
-      {/* Action Sheet */}
       <MenuActionSheet
         item={actionItem}
         open={!!actionItem}
         onClose={() => setActionItem(null)}
         onEdit={handleEdit}
-        onToggleAvailability={handleToggleAvailability}
+        onSetAvailability={handleSetAvailability}
         onDelete={handleDelete}
       />
 
-      {/* Delete Confirm */}
       <DeleteConfirmModal
         open={!!deleteItem}
         itemName={deleteItem?.name ?? ""}

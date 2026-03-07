@@ -1,3 +1,11 @@
+export type AvailabilityStatus = "available" | "unavailable" | "pre-order";
+
+export interface SideItem {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface MenuItem {
   id: string;
   vendorId: string;
@@ -7,8 +15,11 @@ export interface MenuItem {
   category: MenuCategory;
   imageUrl?: string;
   preparationTime: number;
-  isAvailable: boolean;
+  availability: AvailabilityStatus;
+  isAvailable: boolean; // derived from availability !== "unavailable"
   isDeleted: boolean;
+  sides: SideItem[];
+  stockCount?: number;
   createdAt: string;
   updatedAt: string;
 }

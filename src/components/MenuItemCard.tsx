@@ -8,6 +8,18 @@ interface MenuItemCardProps {
   onThreeDot: (item: MenuItem) => void;
 }
 
+const badgeStyles = {
+  available: "bg-primary/10 text-primary",
+  unavailable: "bg-destructive/10 text-destructive",
+  "pre-order": "bg-warning/10 text-warning",
+};
+
+const badgeLabels = {
+  available: "Available",
+  unavailable: "Unavailable",
+  "pre-order": "Pre-Order",
+};
+
 const MenuItemCard = ({ item, onTap, onThreeDot }: MenuItemCardProps) => {
   const formattedPrice = `₦${item.price.toLocaleString()}`;
 
@@ -16,7 +28,7 @@ const MenuItemCard = ({ item, onTap, onThreeDot }: MenuItemCardProps) => {
       onClick={() => onTap(item)}
       className={cn(
         "flex items-center gap-3 rounded-[14px] bg-card p-3 shadow-sm cursor-pointer active:scale-[0.98] transition-all border border-border/50",
-        !item.isAvailable && "opacity-[0.85]"
+        item.availability === "unavailable" && "opacity-[0.85]"
       )}
     >
       {/* Image */}
@@ -49,15 +61,8 @@ const MenuItemCard = ({ item, onTap, onThreeDot }: MenuItemCardProps) => {
         )}
         <div className="mt-1.5 flex items-center justify-between">
           <p className="text-sm font-bold text-primary">{formattedPrice}</p>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-              item.isAvailable
-                ? "bg-primary/10 text-primary"
-                : "bg-destructive/10 text-destructive"
-            )}
-          >
-            {item.isAvailable ? "Available" : "Unavailable"}
+          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", badgeStyles[item.availability])}>
+            {badgeLabels[item.availability]}
           </span>
         </div>
       </div>
