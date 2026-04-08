@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Trash2, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -9,13 +9,17 @@ interface ToggleRowProps {
   subtitle?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  icon?: React.ReactNode;
 }
 
-const ToggleRow = ({ label, subtitle, checked, onChange }: ToggleRowProps) => (
+const ToggleRow = ({ label, subtitle, checked, onChange, icon }: ToggleRowProps) => (
   <div className="flex items-center justify-between px-4 py-3">
-    <div>
-      <p className="text-sm font-medium text-foreground">{label}</p>
-      {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}
+    <div className="flex items-center gap-3">
+      {icon}
+      <div>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}
+      </div>
     </div>
     <button
       onClick={() => onChange(!checked)}
@@ -31,7 +35,20 @@ const AppSettings = () => {
   const { toast } = useToast();
   const [notifications, setNotifications] = useState(true);
   const [orderSound, setOrderSound] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("vendoor_theme") !== "light";
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.remove("light");
+      localStorage.setItem("vendoor_theme", "dark");
+    } else {
+      root.classList.add("light");
+      localStorage.setItem("vendoor_theme", "light");
+    }
+  }, [darkMode]);
 
   const clearCache = () => {
     toast({ title: "Cache cleared" });
@@ -52,7 +69,13 @@ const AppSettings = () => {
           <div className="h-px bg-border mx-4" />
           <ToggleRow label="Order Sound" subtitle="Play sound on new orders" checked={orderSound} onChange={setOrderSound} />
           <div className="h-px bg-border mx-4" />
-          <ToggleRow label="Dark Mode" checked={darkMode} onChange={setDarkMode} />
+          <ToggleRow
+            label="Dark Mode"
+            subtitle={darkMode ? "Dark theme active" : "Light theme active"}
+            checked={darkMode}
+            onChange={setDarkMode}
+            icon={darkMode ? <Moon size={16} className="text-primary" /> : <Sun size={16} className="text-warning" />}
+          />
         </div>
 
         <button

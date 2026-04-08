@@ -42,7 +42,49 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
   const isLate = order.prepTimeLeft && parseInt(order.prepTimeLeft) <= 2;
   const isHurry = order.prepTimeLeft && parseInt(order.prepTimeLeft) <= 5 && !isLate;
 
-  const timelineSteps = ["pending", "accepted", "ready", "completed"];
+  const isPickup = order.type === "pickup";
+  const isDelivery = order.type === "delivery";
+
+  // Delivery: Accepted → Ready → Driver Assigned → Picked Up
+  // Pickup: Accept Order → Mark as Ready → Pick Up
+  const timelineSteps = isDelivery
+    ? [
+        { key: "accepted", label: "Accepted" },
+        { key: "ready", label: "Ready" },
+        { key: "driver_assigned", label: "Driver Assigned" },
+        { key: "pickedup", label: "Picked Up" },
+      ]
+    : [
+        { key: "accepted", label: "Accept Order" },
+        { key: "ready", label: "Mark as Ready" },
+        { key: "completed", label: "Pick Up" },
+      ];
+
+  // Map order status to timeline index
+  const getTimelineIndex = () => {
+    if (isDelivery) {
+      if (order.orderStatus === "pending") return -1;
+      if (order.orderStatus === "accepted") {
+        if (order.riderStatus === "assigned" || order.riderStatus === "enroute") return 1;
+        return 0;
+      }
+      if (order.orderStatus === "ready") {
+        if (order.riderStatus === "pickedup") return 3;
+        if (order.riderStatus === "assigned" || order.riderStatus === "enroute") return 2;
+        return 1;
+      }
+      if (order.orderStatus === "completed") return 3;
+      return -1;
+    } else {
+      if (order.orderStatus === "pending") return -1;
+      if (order.orderStatus === "accepted") return 0;
+      if (order.orderStatus === "ready") return 1;
+      if (order.orderStatus === "completed") return 2;
+      return -1;
+    }
+  };
+
+  const currentTimelineIdx = getTimelineIndex();
 
   return (
     <div className={cn(
@@ -71,26 +113,38 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
         </div>
 
         <div className="px-5 pb-6 space-y-4">
-          {/* Status Timeline */}
-          <div className="flex items-center gap-2 py-2">
-            {timelineSteps.map((step, i) => {
-              const currentIdx = timelineSteps.indexOf(order.orderStatus);
-              const isCompleted = i < currentIdx;
-              const isActive = i === currentIdx;
-              return (
-                <div key={step} className="flex flex-1 items-center gap-2">
-                  <div className={cn(
-                    "h-2 w-2 rounded-full shrink-0",
-                    isCompleted && "bg-primary",
-                    isActive && "bg-primary shadow-[0_0_0_4px] shadow-primary/20",
-                    !isCompleted && !isActive && "bg-muted-foreground/30"
-                  )} />
-                  {i < timelineSteps.length - 1 && (
-                    <div className={cn("flex-1 h-0.5", isCompleted ? "bg-primary" : "bg-muted-foreground/20")} />
-                  )}
-                </div>
-              );
-            })}
+          {/* Status Timeline - type-aware */}
+          <div className="py-3">
+            <div className="flex items-center gap-1">
+              {timelineSteps.map((step, i) => {
+                const isCompleted = i < currentTimelineIdx;
+                const isActive = i === currentTimelineIdx;
+                return (
+                  <div key={step.key} className="flex flex-1 items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                      <div className={cn(
+                        "h-3 w-3 rounded-full transition-all duration-500",
+                        isCompleted && "bg-primary",
+                        isActive && "bg-primary shadow-[0_0_0_4px] shadow-primary/20",
+                        !isCompleted && !isActive && "bg-muted-foreground/30"
+                      )} />
+                      <span className={cn(
+                        "text-[8px] font-medium text-center leading-tight w-14",
+                        isCompleted || isActive ? "text-primary" : "text-muted-foreground/50"
+                      )}>
+                        {step.label}
+                      </span>
+                    </div>
+                    {i < timelineSteps.length - 1 && (
+                      <div className={cn(
+                        "flex-1 h-0.5 mb-4 transition-all duration-500",
+                        isCompleted ? "bg-primary" : "bg-muted-foreground/20"
+                      )} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Order Info */}
@@ -109,10 +163,10 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
               <p className="text-xl font-bold text-primary">{order.amount}</p>
               <span className={cn(
                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium",
-                order.type === "delivery" ? "bg-info/10 text-info" : "bg-primary/10 text-primary"
+                isDelivery ? "bg-info/10 text-info" : "bg-primary/10 text-primary"
               )}>
-                {order.type === "delivery" ? <Truck size={12} /> : <ShoppingBag size={12} />}
-                {order.type === "delivery" ? "Delivery" : "Pickup"}
+                {isDelivery ? <Truck size={12} /> : <ShoppingBag size={12} />}
+                {isDelivery ? "Delivery" : "Pickup"}
               </span>
             </div>
             {order.scheduleDate && (
@@ -155,61 +209,63 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
             </div>
           )}
 
-          {/* Rider Status */}
-          <button
-            onClick={() => setRiderExpanded(!riderExpanded)}
-            className="w-full rounded-2xl bg-muted/50 p-4 text-left active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {order.riderStatus === "assigned" && <UserCheck size={18} className="text-primary" />}
-                {order.riderStatus === "unassigned" && <UserX size={18} className="text-destructive" />}
-                {order.riderStatus === "enroute" && <Navigation size={18} className="text-warning" />}
-                {order.riderStatus === "pickedup" && <Navigation size={18} className="text-primary" />}
-                {order.riderStatus === "delivered" && <UserCheck size={18} className="text-primary" />}
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {order.riderStatus === "assigned" && "Rider Assigned"}
-                    {order.riderStatus === "unassigned" && "No Rider Yet"}
-                    {order.riderStatus === "enroute" && "Rider En Route"}
-                    {order.riderStatus === "pickedup" && "Order Picked Up"}
-                    {order.riderStatus === "delivered" && "Delivered"}
-                  </p>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <span className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      (order.riderStatus === "assigned" || order.riderStatus === "delivered") && "bg-primary animate-live-pulse",
-                      order.riderStatus === "unassigned" && "bg-destructive",
-                      (order.riderStatus === "enroute" || order.riderStatus === "pickedup") && "bg-warning animate-live-pulse"
-                    )} />
-                    Live status
+          {/* Rider Status - Only for delivery orders */}
+          {isDelivery && (
+            <button
+              onClick={() => setRiderExpanded(!riderExpanded)}
+              className="w-full rounded-2xl bg-muted/50 p-4 text-left active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {order.riderStatus === "assigned" && <UserCheck size={18} className="text-primary" />}
+                  {order.riderStatus === "unassigned" && <UserX size={18} className="text-destructive" />}
+                  {order.riderStatus === "enroute" && <Navigation size={18} className="text-warning" />}
+                  {order.riderStatus === "pickedup" && <Navigation size={18} className="text-primary" />}
+                  {order.riderStatus === "delivered" && <UserCheck size={18} className="text-primary" />}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {order.riderStatus === "assigned" && "Rider Assigned"}
+                      {order.riderStatus === "unassigned" && "No Rider Yet"}
+                      {order.riderStatus === "enroute" && "Rider En Route"}
+                      {order.riderStatus === "pickedup" && "Order Picked Up"}
+                      {order.riderStatus === "delivered" && "Delivered"}
+                    </p>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        (order.riderStatus === "assigned" || order.riderStatus === "delivered") && "bg-primary animate-live-pulse",
+                        order.riderStatus === "unassigned" && "bg-destructive",
+                        (order.riderStatus === "enroute" || order.riderStatus === "pickedup") && "bg-warning animate-live-pulse"
+                      )} />
+                      Live status
+                    </div>
                   </div>
                 </div>
+                <ChevronDown size={16} className={cn("text-muted-foreground transition-transform duration-300", riderExpanded && "rotate-180")} />
               </div>
-              <ChevronDown size={16} className={cn("text-muted-foreground transition-transform duration-300", riderExpanded && "rotate-180")} />
-            </div>
 
-            {riderExpanded && order.riderStatus !== "unassigned" && (
-              <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 animate-fade-in-up">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Phone size={14} className="text-primary" />
+              {riderExpanded && order.riderStatus !== "unassigned" && (
+                <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 animate-fade-in-up">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <Phone size={14} className="text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Tap to call rider</span>
                 </div>
-                <span className="text-xs text-muted-foreground">Tap to call rider</span>
-              </div>
-            )}
+              )}
 
-            {order.riderStatus === "unassigned" && order.orderStatus === "accepted" && (
-              <div className="mt-3 pt-3 border-t border-border animate-fade-in-up">
-                <div
-                  onClick={(e) => { e.stopPropagation(); onAssignRider?.(order.id); }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-lg shadow-secondary/20 active:scale-95 transition-transform"
-                >
-                  <Users size={14} />
-                  Appoint Rider
+              {order.riderStatus === "unassigned" && order.orderStatus === "accepted" && (
+                <div className="mt-3 pt-3 border-t border-border animate-fade-in-up">
+                  <div
+                    onClick={(e) => { e.stopPropagation(); onAssignRider?.(order.id); }}
+                    className="inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-lg shadow-secondary/20 active:scale-95 transition-transform"
+                  >
+                    <Users size={14} />
+                    Appoint Rider
+                  </div>
                 </div>
-              </div>
-            )}
-          </button>
+              )}
+            </button>
+          )}
 
           {/* Special Instructions */}
           <div className="rounded-2xl bg-muted/50 p-4">
