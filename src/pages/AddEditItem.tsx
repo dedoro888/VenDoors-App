@@ -99,11 +99,22 @@ const AddEditItem = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 bg-card px-4 py-4 shadow-sm border-b border-border">
-        <button onClick={handleBack} className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted active:scale-95 transition-transform">
-          <ArrowLeft size={18} className="text-foreground" />
-        </button>
-        <h1 className="text-lg font-bold text-foreground">{isEdit ? "Edit Item" : "Add New Item"}</h1>
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-card px-4 py-4 shadow-sm border-b border-border">
+        <div className="flex items-center gap-3">
+          <button onClick={handleBack} className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted active:scale-95 transition-transform">
+            <ArrowLeft size={18} className="text-foreground" />
+          </button>
+          <h1 className="text-lg font-bold text-foreground">{isEdit ? "Edit Item" : "Add New Item"}</h1>
+        </div>
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={!canSave || saving}
+          className="rounded-xl gap-1.5"
+        >
+          <Save size={14} />
+          {saving ? "Saving..." : "Save"}
+        </Button>
       </div>
 
       {/* Form */}
