@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Upload, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Trash2, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { MENU_CATEGORIES, PREP_TIME_OPTIONS, type MenuItem, type MenuCategory, type AvailabilityStatus, type SideItem } from "@/types/menu";
