@@ -51,15 +51,15 @@ const Profile = () => {
 
   return (
     <div className="pb-24">
-      {/* Header */}
-      <div className="bg-secondary px-5 pb-8 pt-12 text-center relative">
+      {/* Profile Header */}
+      <div className="bg-secondary px-5 pb-6 pt-12 text-center">
         <button
           onClick={() => setAvatarSheetOpen(true)}
           className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground group"
         >
           AJ
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-active:opacity-100 transition-opacity">
-            <Camera size={18} className="text-white" />
+            <Camera size={18} className="text-primary-foreground" />
           </div>
         </button>
         <button onClick={() => navigate("/profile/store-settings")} className="mt-3 block mx-auto">
@@ -68,8 +68,8 @@ const Profile = () => {
         </button>
       </div>
 
-      {/* Store Status Toggle */}
-      <div className="px-4 -mt-5 mb-4">
+      {/* Store Status Toggle — separate card below header */}
+      <div className="px-4 mt-5 mb-4">
         <button
           onClick={() => setStoreOpen(!storeOpen)}
           className={cn(
@@ -80,7 +80,7 @@ const Profile = () => {
           <div className="flex items-center gap-3">
             <div className={cn("h-3 w-3 rounded-full", storeOpen ? "bg-primary animate-live-pulse" : "bg-destructive animate-pulse-red")} />
             <span className={cn("text-sm font-semibold", storeOpen ? "text-primary" : "text-destructive")}>
-              {storeOpen ? "Open for Orders" : "Store Closed"}
+              {storeOpen ? "Open for Orders" : "Closed"}
             </span>
           </div>
           <div className={cn(
