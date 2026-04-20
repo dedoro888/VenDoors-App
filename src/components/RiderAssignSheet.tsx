@@ -1,14 +1,19 @@
-import { useState } from "react";
-import { X, Phone, Star, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Star, MapPin, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import type { Rider } from "@/types/order";
 
-const mockRiders: Rider[] = [
-  { id: "r1", name: "Adebayo Olamide", distance: "0.8 km", rating: 4.8, status: "available", phone: "+2348012345678" },
-  { id: "r2", name: "Chinedu Emeka", distance: "1.2 km", rating: 4.5, status: "available", phone: "+2348023456789" },
-  { id: "r3", name: "Femi Adeyemi", distance: "2.1 km", rating: 4.9, status: "busy", phone: "+2348034567890" },
-  { id: "r4", name: "Ibrahim Musa", distance: "0.5 km", rating: 4.3, status: "available", phone: "+2348045678901" },
-];
+interface RiderRow {
+  id: string;
+  name: string;
+  phone: string | null;
+  rating: number;
+  distance_km: number;
+  available: boolean;
+}
 
 interface RiderAssignSheetProps {
   open: boolean;
@@ -18,15 +23,56 @@ interface RiderAssignSheetProps {
 }
 
 const RiderAssignSheet = ({ open, onClose, onAssign, orderId }: RiderAssignSheetProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [riders, setRiders] = useState<RiderRow[]>([]);
+  const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
 
-  const handleAssign = async (rider: Rider) => {
-    if (assigning || rider.status === "busy") return;
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    supabase
+      .from("riders")
+      .select("*")
+      .order("distance_km", { ascending: true })
+      .then(({ data }) => {
+        if (data) setRiders(data as RiderRow[]);
+        setLoading(false);
+      });
+  }, [open]);
+
+  const handleAssign = async (rider: RiderRow) => {
+    if (assigning || !rider.available || !user) return;
     setSelected(rider.id);
     setAssigning(true);
-    await new Promise((r) => setTimeout(r, 800));
-    onAssign(rider);
+
+    await supabase.from("order_riders").insert({
+      user_id: user.id,
+      order_id: orderId,
+      rider_id: rider.id,
+      status: "accepted",
+    });
+
+    await supabase.from("notifications").insert({
+      user_id: user.id,
+      type: "order",
+      title: `${rider.name} assigned`,
+      description: `Rider for order ${orderId} · ${rider.distance_km} km away`,
+      link: "/orders",
+    });
+
+    toast({ title: "Rider assigned", description: `${rider.name} accepted the request.` });
+
+    onAssign({
+      id: rider.id,
+      name: rider.name,
+      distance: `${rider.distance_km} km`,
+      rating: Number(rider.rating),
+      status: "available",
+      phone: rider.phone || "",
+    });
     setAssigning(false);
     setSelected(null);
     onClose();
@@ -56,15 +102,21 @@ const RiderAssignSheet = ({ open, onClose, onAssign, orderId }: RiderAssignSheet
         </div>
 
         <div className="px-4 py-3 space-y-2">
-          {mockRiders.map((rider) => (
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            </div>
+          ) : riders.length === 0 ? (
+            <p className="py-8 text-center text-xs text-muted-foreground">No riders available right now.</p>
+          ) : riders.map((rider) => (
             <button
               key={rider.id}
               onClick={() => handleAssign(rider)}
-              disabled={rider.status === "busy" || assigning}
+              disabled={!rider.available || assigning}
               className={cn(
                 "w-full flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98]",
                 selected === rider.id ? "border-primary bg-primary/5" : "border-border",
-                rider.status === "busy" && "opacity-50 cursor-not-allowed"
+                !rider.available && "opacity-50 cursor-not-allowed"
               )}
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">
@@ -74,19 +126,24 @@ const RiderAssignSheet = ({ open, onClose, onAssign, orderId }: RiderAssignSheet
                 <p className="text-sm font-semibold text-foreground">{rider.name}</p>
                 <div className="flex items-center gap-3 mt-0.5">
                   <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <MapPin size={10} /> {rider.distance}
+                    <MapPin size={10} /> {rider.distance_km} km
                   </span>
                   <span className="flex items-center gap-1 text-[11px] text-warning">
-                    <Star size={10} fill="currentColor" /> {rider.rating}
+                    <Star size={10} fill="currentColor" /> {Number(rider.rating).toFixed(1)}
                   </span>
+                  {rider.phone && (
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Phone size={10} /> {rider.phone.slice(-4)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                  rider.status === "available" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                  rider.available ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                 )}>
-                  {rider.status === "available" ? "Available" : "Busy"}
+                  {rider.available ? "Available" : "Busy"}
                 </span>
                 {selected === rider.id && assigning && (
                   <div className="h-4 w-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />

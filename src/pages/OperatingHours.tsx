@@ -1,43 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { DAYS, defaultDay, loadSchedule, saveSchedule, type DaySchedule } from "@/hooks/useStoreSchedule";
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = Array.from({ length: 24 }, (_, h) => {
   const hour = h % 12 || 12;
   const ampm = h < 12 ? "AM" : "PM";
   return [`${String(h).padStart(2, "0")}:00`, `${hour}:00 ${ampm}`];
 });
 
-interface DaySchedule {
-  enabled: boolean;
-  open: string;
-  close: string;
-}
-
-const defaultSchedule: DaySchedule = { enabled: true, open: "08:00", close: "22:00" };
-
-const LAST_HOURS_CHANGE_KEY = "vendoor_last_hours_change";
+const ORDERED_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const OperatingHours = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [schedule, setSchedule] = useState<Record<string, DaySchedule>>(
-    Object.fromEntries(DAYS.map((d) => [d, { ...defaultSchedule }]))
-  );
-
-  const canChangeToday = () => {
-    const lastChange = localStorage.getItem(LAST_HOURS_CHANGE_KEY);
-    if (!lastChange) return true;
-    const today = new Date().toDateString();
-    return lastChange !== today;
-  };
+  const [schedule, setSchedule] = useState<Record<string, DaySchedule>>(() => {
+    const loaded = loadSchedule();
+    // Ensure all 7 days are present
+    return Object.fromEntries(DAYS.map((d) => [d, loaded[d] ?? { ...defaultDay }]));
+  });
 
   const updateDay = (day: string, field: keyof DaySchedule, value: string | boolean) => {
     setSchedule((prev) => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
@@ -52,16 +39,12 @@ const OperatingHours = () => {
   };
 
   const handleSave = async () => {
-    if (!canChangeToday()) {
-      toast({ title: "Daily limit reached", description: "You can only change operating hours once per day.", variant: "destructive" });
-      return;
-    }
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 800));
-    localStorage.setItem(LAST_HOURS_CHANGE_KEY, new Date().toDateString());
+    await new Promise((r) => setTimeout(r, 400));
+    saveSchedule(schedule);
     setSaving(false);
     setHasChanges(false);
-    toast({ title: "Operating hours saved" });
+    toast({ title: "Operating hours saved", description: "Store status will reflect changes immediately." });
     navigate(-1);
   };
 
@@ -85,19 +68,13 @@ const OperatingHours = () => {
         </Button>
       </div>
 
-      {!canChangeToday() && (
-        <div className="mx-4 mt-4 rounded-xl bg-warning/10 border border-warning/20 p-3">
-          <p className="text-xs text-warning font-medium">You've already updated your hours today. Changes can be made again tomorrow.</p>
-        </div>
-      )}
-
       <div className="px-4 py-4">
         <button onClick={applyToAll} className="text-xs font-medium text-primary mb-4 active:opacity-70">
           Apply Monday's hours to all days
         </button>
 
         <div className="space-y-3">
-          {DAYS.map((day) => {
+          {ORDERED_DAYS.map((day) => {
             const s = schedule[day];
             return (
               <div key={day} className="rounded-xl bg-card p-3 shadow-sm">
@@ -145,6 +122,10 @@ const OperatingHours = () => {
             );
           })}
         </div>
+
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">
+          Status updates instantly. Manual toggle on the dashboard overrides the schedule.
+        </p>
       </div>
     </div>
   );
