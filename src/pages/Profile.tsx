@@ -3,6 +3,7 @@ import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, C
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -40,13 +41,18 @@ const menuSections = [
 const Profile = () => {
   const navigate = useNavigate();
   const { storeOpen, setStoreOpen } = useStore();
+  const { user, signOut } = useAuth();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
 
-  const handleLogout = () => {
+  const businessName = (user?.user_metadata?.business_name as string) || "Your Store";
+  const email = user?.email || "";
+  const initials = businessName.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
+
+  const handleLogout = async () => {
     setLogoutOpen(false);
-    // Clear token, navigate to login, reset state
-    navigate("/");
+    await signOut();
+    navigate("/auth");
   };
 
   return (
@@ -57,14 +63,14 @@ const Profile = () => {
           onClick={() => setAvatarSheetOpen(true)}
           className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground group"
         >
-          AJ
+          {initials}
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-active:opacity-100 transition-opacity">
             <Camera size={18} className="text-primary-foreground" />
           </div>
         </button>
         <button onClick={() => navigate("/profile/store-settings")} className="mt-3 block mx-auto">
-          <p className="text-lg font-semibold text-secondary-foreground">Amaka's Kitchen</p>
-          <p className="text-xs text-secondary-foreground/60">amaka@vendoor.com</p>
+          <p className="text-lg font-semibold text-secondary-foreground">{businessName}</p>
+          <p className="text-xs text-secondary-foreground/60">{email}</p>
         </button>
       </div>
 
