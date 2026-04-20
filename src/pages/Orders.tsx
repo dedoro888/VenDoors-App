@@ -39,8 +39,40 @@ const initialHistory: Order[] = [
   },
 ];
 
+type StatusFilter = "new" | "preparing" | "ready" | "transit" | "completed" | "cancelled";
+
+const STATUS_TABS: { key: StatusFilter; label: string }[] = [
+  { key: "new", label: "New" },
+  { key: "preparing", label: "Preparing" },
+  { key: "ready", label: "Ready for Pickup" },
+  { key: "transit", label: "In Transit" },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
+const matchesFilter = (order: Order, filter: StatusFilter): boolean => {
+  switch (filter) {
+    case "new":
+      return order.orderStatus === "pending";
+    case "preparing":
+      return order.orderStatus === "accepted";
+    case "ready":
+      return order.orderStatus === "ready" && order.riderStatus !== "pickedup";
+    case "transit":
+      return (
+        order.type === "delivery" &&
+        (order.riderStatus === "pickedup" || order.riderStatus === "enroute") &&
+        order.orderStatus !== "completed"
+      );
+    case "completed":
+      return order.orderStatus === "completed";
+    case "cancelled":
+      return order.orderStatus === "rejected" || order.orderStatus === "cancelled";
+  }
+};
+
 const Orders = () => {
-  const [activeTab, setActiveTab] = useState<"active" | "history">("active");
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>("new");
   const [orders, setOrders] = useState(initialActiveOrders);
   const [history] = useState(initialHistory);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
