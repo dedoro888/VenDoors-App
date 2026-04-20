@@ -27,7 +27,7 @@ const Onboarding = () => {
 
   const handleGetStarted = () => {
     localStorage.setItem("vendoor_onboarded", "true");
-    navigate("/dashboard");
+    navigate("/auth");
   };
 
   const handleNext = () => {

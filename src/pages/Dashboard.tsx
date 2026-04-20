@@ -1,69 +1,47 @@
 import { useState } from "react";
-import { Bell, ChevronDown, ChevronRight, Package, DollarSign, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ChevronDown, Package, DollarSign, Clock } from "lucide-react";
 import ToggleSwitch from "@/components/ToggleSwitch";
 import WeeklyChart from "@/components/WeeklyChart";
+import NotificationBell from "@/components/NotificationBell";
 import { useStore } from "@/contexts/StoreContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const { storeOpen, setStoreOpen } = useStore();
+  const { storeOpen, setStoreOpen, scheduleOpen } = useStore();
+  const { user } = useAuth();
   const [weeklyExpanded, setWeeklyExpanded] = useState(true);
-  const [showAlerts, setShowAlerts] = useState(true);
 
-  const alerts = [
-    {
-      icon: AlertCircle,
-      title: "2 orders waiting for approval",
-      subtitle: "New delivery requests from Yaba",
-      time: "2 mins ago",
-      type: "pending" as const,
-      path: "/orders",
-    },
-    {
-      icon: CheckCircle,
-      title: "Payout processed",
-      subtitle: "₦125,000 deposited to your account",
-      time: "3 hours ago",
-      type: "payout" as const,
-      path: "/profile/payout-settings",
-    },
-    {
-      icon: Info,
-      title: "Update your store hours",
-      subtitle: "Weekend schedule needs confirmation",
-      time: "Yesterday",
-      type: "reminder" as const,
-      path: "/profile/operating-hours",
-    },
-  ];
+  const businessInitials = (user?.user_metadata?.business_name || user?.email || "VV")
+    .split(" ")
+    .map((s: string) => s[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
-  const alertStyles = {
-    pending: "border-l-4 border-l-primary bg-primary-light",
-    payout: "border-l-4 border-l-success bg-success-light",
-    reminder: "border-l-4 border-l-info bg-info-light",
-  };
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good Morning";
+    if (h < 17) return "Good Afternoon";
+    return "Good Evening";
+  })();
+
+  const firstName = (user?.user_metadata?.business_name || user?.email?.split("@")[0] || "Vendor").split(" ")[0];
 
   return (
     <div className="pb-24">
-      {/* Header */}
+      {/* Header — bell on the LEFT */}
       <div className="bg-secondary px-5 pb-6 pt-12">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-secondary-foreground/70">Good Evening, Amaka</p>
-            <p className="text-xs text-secondary-foreground/50">Here's your store overview</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              AJ
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <div>
+              <p className="text-sm text-secondary-foreground/70">{greeting}, {firstName}</p>
+              <p className="text-xs text-secondary-foreground/50">Here's your store overview</p>
             </div>
-            <button className="relative">
-              <Bell size={22} className="text-secondary-foreground" />
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                3
-              </span>
-            </button>
+          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+            {businessInitials}
           </div>
         </div>
       </div>
@@ -77,6 +55,9 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">
                 {storeOpen ? "You are currently accepting orders" : "Your store is currently closed"}
               </p>
+              {!scheduleOpen && storeOpen && (
+                <p className="mt-1 text-[10px] text-warning">Outside scheduled hours — open manually</p>
+              )}
             </div>
             <ToggleSwitch checked={storeOpen} onToggle={setStoreOpen} />
           </div>
@@ -101,7 +82,7 @@ const Dashboard = () => {
             </div>
             <p className="text-2xl font-bold text-foreground tabular-nums">₦<span>0</span></p>
             <p className="text-xs font-medium text-foreground">Revenue Today</p>
-            <p className="text-[10px] text-muted-foreground">Before commission</p>
+            <p className="text-[10px] text-muted-foreground">Net of commission</p>
           </div>
         </div>
         <div className="mt-3 animate-fade-in-up stagger-3 rounded-2xl bg-card p-4 shadow-sm">
@@ -122,7 +103,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Weekly Summary — expanded by default, prominent */}
+      {/* Weekly Summary */}
       <div className="px-4 mt-5">
         <div className="rounded-2xl bg-card shadow-sm overflow-hidden border border-border/50">
           <button
@@ -154,53 +135,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Alerts */}
-      <div className="px-4 mt-5">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">Alerts</p>
-          <button onClick={() => setShowAlerts(!showAlerts)} className="text-xs text-primary font-medium">
-            {showAlerts ? "Hide" : "Show"}
-          </button>
-        </div>
-
-        {showAlerts ? (
-          <div className="space-y-3">
-            {alerts.map((alert, i) => (
-              <button
-                key={i}
-                onClick={() => navigate(alert.path)}
-                className={cn(
-                  "animate-fade-in-up flex w-full items-start gap-3 rounded-xl p-3 text-left active:scale-[0.98] transition-transform",
-                  alertStyles[alert.type],
-                  i === 0 && "stagger-1",
-                  i === 1 && "stagger-2",
-                  i === 2 && "stagger-3"
-                )}
-              >
-                <div className="mt-0.5">
-                  <alert.icon size={18} className={cn(
-                    alert.type === "pending" && "text-primary",
-                    alert.type === "payout" && "text-success",
-                    alert.type === "reminder" && "text-info"
-                  )} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{alert.title}</p>
-                  <p className="text-xs text-muted-foreground">{alert.subtitle}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">{alert.time}</p>
-                </div>
-                <ChevronRight size={16} className="mt-1 text-muted-foreground" />
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center py-8 text-center">
-            <CheckCircle size={32} className="mb-2 text-success" />
-            <p className="text-sm text-muted-foreground">You're all caught up 🎉</p>
-          </div>
-        )}
       </div>
     </div>
   );
