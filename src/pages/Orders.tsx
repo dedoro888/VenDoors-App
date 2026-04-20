@@ -39,8 +39,40 @@ const initialHistory: Order[] = [
   },
 ];
 
+type StatusFilter = "new" | "preparing" | "ready" | "transit" | "completed" | "cancelled";
+
+const STATUS_TABS: { key: StatusFilter; label: string }[] = [
+  { key: "new", label: "New" },
+  { key: "preparing", label: "Preparing" },
+  { key: "ready", label: "Ready for Pickup" },
+  { key: "transit", label: "In Transit" },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
+const matchesFilter = (order: Order, filter: StatusFilter): boolean => {
+  switch (filter) {
+    case "new":
+      return order.orderStatus === "pending";
+    case "preparing":
+      return order.orderStatus === "accepted";
+    case "ready":
+      return order.orderStatus === "ready" && order.riderStatus !== "pickedup";
+    case "transit":
+      return (
+        order.type === "delivery" &&
+        (order.riderStatus === "pickedup" || order.riderStatus === "enroute") &&
+        order.orderStatus !== "completed"
+      );
+    case "completed":
+      return order.orderStatus === "completed";
+    case "cancelled":
+      return order.orderStatus === "rejected" || order.orderStatus === "cancelled";
+  }
+};
+
 const Orders = () => {
-  const [activeTab, setActiveTab] = useState<"active" | "history">("active");
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>("new");
   const [orders, setOrders] = useState(initialActiveOrders);
   const [history] = useState(initialHistory);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -91,63 +123,92 @@ const Orders = () => {
     setRiderAssignOrderId(null);
   };
 
-  const activeOrders = orders.filter((o) => !["completed", "rejected", "cancelled"].includes(o.orderStatus));
+  const allOrders = [...orders, ...history];
+  const counts = STATUS_TABS.reduce((acc, tab) => {
+    acc[tab.key] = allOrders.filter((o) => matchesFilter(o, tab.key)).length;
+    return acc;
+  }, {} as Record<StatusFilter, number>);
+
+  const filteredOrders = allOrders.filter((o) => matchesFilter(o, activeFilter));
+  const isHistoryFilter = activeFilter === "completed" || activeFilter === "cancelled";
 
   return (
     <div className="pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-card px-5 pb-3 pt-12 shadow-sm border-b border-border">
+      <div className="sticky top-0 z-20 bg-card px-5 pb-3 pt-12 shadow-sm border-b border-border">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Orders</h1>
           <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted">
             <Search size={18} className="text-muted-foreground" />
           </button>
         </div>
+      </div>
 
-        <div className="mt-4 flex rounded-xl bg-muted p-1">
-          <button
-            onClick={() => setActiveTab("active")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-all",
-              activeTab === "active" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-            )}
-          >
-            Active Orders
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-              {activeOrders.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab("history")}
-            className={cn(
-              "flex-1 rounded-lg py-2 text-sm font-medium transition-all",
-              activeTab === "history" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-            )}
-          >
-            History
-          </button>
+      {/* Status Filter Bar */}
+      <div className="sticky top-[84px] z-10 bg-background border-b border-border">
+        <div
+          className="flex gap-2 overflow-x-auto px-4 py-3 [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {STATUS_TABS.map((tab) => {
+            const isActive = activeFilter === tab.key;
+            const count = counts[tab.key];
+            const isNew = tab.key === "new";
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveFilter(tab.key)}
+                className={cn(
+                  "flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-[1.02]"
+                    : "bg-muted text-muted-foreground active:bg-muted/70",
+                  isNew && count > 0 && !isActive && "animate-pulse"
+                )}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={cn(
+                    "flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold transition-colors",
+                    isActive
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-background text-foreground"
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Orders List */}
       <div className="space-y-3 px-4 pt-4">
-        {activeTab === "active"
-          ? activeOrders.map((order) => (
-              <div key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
-                <OrderCard
-                  order={order}
-                  onAccept={handleAccept}
-                  onReject={handleReject}
-                  onMarkReady={handleMarkReady}
-                  actionLoading={actionLoading}
-                />
-              </div>
-            ))
-          : history.map((order) => (
-              <div key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
-                <OrderCard order={order} isHistory />
-              </div>
-            ))}
+        {filteredOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Search size={24} className="text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground">No orders in this category</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Orders will appear here when available
+            </p>
+          </div>
+        ) : (
+          filteredOrders.map((order) => (
+            <div key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
+              <OrderCard
+                order={order}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                onMarkReady={handleMarkReady}
+                actionLoading={actionLoading}
+                isHistory={isHistoryFilter}
+              />
+            </div>
+          ))
+        )}
       </div>
 
       {/* Order Detail Modal */}
