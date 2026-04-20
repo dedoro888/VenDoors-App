@@ -14,16 +14,254 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      notifications: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          link: string | null
+          read_at: string | null
+          resolved_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          resolved_at?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          resolved_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      order_riders: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          rider_id: string
+          status: Database["public"]["Enums"]["assignment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          rider_id: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          rider_id?: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_riders_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          business_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      riders: {
+        Row: {
+          available: boolean
+          avatar_url: string | null
+          created_at: string
+          distance_km: number
+          id: string
+          name: string
+          phone: string | null
+          rating: number
+        }
+        Insert: {
+          available?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          distance_km?: number
+          id?: string
+          name: string
+          phone?: string | null
+          rating?: number
+        }
+        Update: {
+          available?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          distance_km?: number
+          id?: string
+          name?: string
+          phone?: string | null
+          rating?: number
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          description: string | null
+          gross_amount: number
+          id: string
+          net_amount: number
+          order_id: string | null
+          receiver: string | null
+          reference: string
+          sender: string | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          description?: string | null
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          order_id?: string | null
+          receiver?: string | null
+          reference?: string
+          sender?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          description?: string | null
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          order_id?: string | null
+          receiver?: string | null
+          reference?: string
+          sender?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          available_balance: number
+          created_at: string
+          id: string
+          lifetime_earnings: number
+          pending_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earnings?: number
+          pending_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earnings?: number
+          pending_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      verify_transaction: {
+        Args: { _reference: string }
+        Returns: {
+          business_name: string
+          created_at: string
+          net_amount: number
+          reference: string
+          status: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      assignment_status:
+        | "requested"
+        | "accepted"
+        | "rejected"
+        | "completed"
+        | "cancelled"
+      notification_type: "order" | "payment" | "profile" | "system"
+      transaction_status: "pending" | "completed" | "failed"
+      transaction_type: "sale" | "payout" | "refund" | "adjustment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +388,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      assignment_status: [
+        "requested",
+        "accepted",
+        "rejected",
+        "completed",
+        "cancelled",
+      ],
+      notification_type: ["order", "payment", "profile", "system"],
+      transaction_status: ["pending", "completed", "failed"],
+      transaction_type: ["sale", "payout", "refund", "adjustment"],
+    },
   },
 } as const
