@@ -30,7 +30,21 @@ const Auth = () => {
   const from = (location.state as { from?: string } | null)?.from || "/dashboard";
 
   useEffect(() => {
-    if (!authLoading && user) navigate(from, { replace: true });
+    if (authLoading || !user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("profile_completed")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const completed = Boolean(data?.profile_completed);
+      navigate(completed ? from : "/onboarding/business-profile", { replace: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, authLoading, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
