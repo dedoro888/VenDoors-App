@@ -91,31 +91,49 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          banner_url: string | null
+          business_address: string | null
+          business_lat: number | null
+          business_lng: number | null
           business_name: string | null
           created_at: string
           email: string | null
           id: string
+          logo_url: string | null
           phone: string | null
+          profile_completed: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          banner_url?: string | null
+          business_address?: string | null
+          business_lat?: number | null
+          business_lng?: number | null
           business_name?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          logo_url?: string | null
           phone?: string | null
+          profile_completed?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          banner_url?: string | null
+          business_address?: string | null
+          business_lat?: number | null
+          business_lng?: number | null
           business_name?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          logo_url?: string | null
           phone?: string | null
+          profile_completed?: boolean
           updated_at?: string
           user_id?: string
         }

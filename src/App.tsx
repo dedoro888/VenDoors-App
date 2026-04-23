@@ -18,6 +18,8 @@ import TransactionDetail from "./pages/TransactionDetail";
 import VerifyTransaction from "./pages/VerifyTransaction";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import BusinessProfile from "./pages/BusinessProfile";
+import OnboardBusinessProfile from "./pages/OnboardBusinessProfile";
 import StoreSettings from "./pages/StoreSettings";
 import OperatingHours from "./pages/OperatingHours";
 import PayoutSettings from "./pages/PayoutSettings";
@@ -58,7 +60,9 @@ const App = () => (
                 <Route path="/earnings" element={<Protected><Earnings /></Protected>} />
                 <Route path="/earnings/transactions/:id" element={<Protected><TransactionDetail /></Protected>} />
                 <Route path="/notifications" element={<Protected><Notifications /></Protected>} />
+                <Route path="/onboarding/business-profile" element={<ProtectedRoute><OnboardBusinessProfile /></ProtectedRoute>} />
                 <Route path="/profile" element={<Protected><Profile /></Protected>} />
+                <Route path="/profile/business-profile" element={<Protected><BusinessProfile /></Protected>} />
                 <Route path="/profile/store-settings" element={<Protected><StoreSettings /></Protected>} />
                 <Route path="/profile/operating-hours" element={<Protected><OperatingHours /></Protected>} />
                 <Route path="/profile/payout-settings" element={<Protected><PayoutSettings /></Protected>} />
