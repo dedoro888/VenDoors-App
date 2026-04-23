@@ -3,6 +3,7 @@ import { ChevronDown, Package, DollarSign, Clock } from "lucide-react";
 import ToggleSwitch from "@/components/ToggleSwitch";
 import WeeklyChart from "@/components/WeeklyChart";
 import NotificationBell from "@/components/NotificationBell";
+import SetupChecklist from "@/components/SetupChecklist";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -46,8 +47,11 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Setup Checklist (only shows if setup not completed) */}
+      <SetupChecklist />
+
       {/* Store Status */}
-      <div className="px-4 -mt-3">
+      <div className="px-4 mt-4">
         <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>

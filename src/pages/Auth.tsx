@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, Store, Mail, Lock, User, Phone } from "lucide-react";
+import { Loader2, Store, Mail, Lock, User, Phone, Building2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -18,12 +19,22 @@ const Auth = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [mode, setMode] = useState<Mode>("signin");
+  const [signupStep, setSignupStep] = useState<1 | 2>(1); // 1 = business, 2 = personal + creds
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [form, setForm] = useState({
+    // Business
     businessName: "",
+    businessPhone: "",
+    businessRegistered: false,
+    isOwner: true,
+    // Personal
+    firstName: "",
+    lastName: "",
+    personalPhone: "",
+    personalEmail: "",
+    // Credentials
     email: "",
-    phone: "",
     password: "",
   });
 
@@ -35,50 +46,117 @@ const Auth = () => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("profile_completed")
+        .select("setup_completed, profile_completed, business_email_verified, personal_phone_verified")
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      const completed = Boolean(data?.profile_completed);
-      navigate(completed ? from : "/onboarding/business-profile", { replace: true });
+
+      if (data?.setup_completed) {
+        navigate(from, { replace: true });
+        return;
+      }
+
+      // Email needs verification or phone needs verification?
+      const emailOk = Boolean(user.email_confirmed_at) || data?.business_email_verified;
+      const phoneOk = data?.personal_phone_verified;
+      if (!emailOk || !phoneOk) {
+        navigate("/verify-account", { replace: true });
+        return;
+      }
+
+      // Otherwise jump into wizard
+      navigate("/setup/payout", { replace: true });
     })();
     return () => {
       cancelled = true;
     };
   }, [user, authLoading, navigate, from]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const update = (k: keyof typeof form, v: string | boolean) =>
+    setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email: form.email,
-          password: form.password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              business_name: form.businessName,
-              phone: form.phone,
-            },
-          },
-        });
-        if (error) throw error;
-        toast({ title: "Welcome to VenDoor", description: "Your vendor account is ready." });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: form.email,
-          password: form.password,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+      if (error) throw error;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       toast({
-        title: mode === "signup" ? "Sign up failed" : "Sign in failed",
+        title: "Sign in failed",
         description: msg.includes("Invalid login") ? "Invalid email or password" : msg,
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleNextSignup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.businessName.trim()) {
+      toast({ title: "Business name is required", variant: "destructive" });
+      return;
+    }
+    setSignupStep(2);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.personalPhone.trim()) {
+      toast({ title: "Please fill in required fields", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            business_name: form.businessName,
+            phone: form.businessPhone,
+          },
+        },
+      });
+      if (error) throw error;
+
+      // Persist personal info + legitimacy fields
+      if (data.user) {
+        await Promise.all([
+          supabase.from("personal_info").upsert(
+            {
+              user_id: data.user.id,
+              first_name: form.firstName,
+              last_name: form.lastName,
+              personal_phone: form.personalPhone,
+              personal_email: form.personalEmail || null,
+            },
+            { onConflict: "user_id" }
+          ),
+          supabase
+            .from("profiles")
+            .update({
+              business_registered: form.businessRegistered,
+              is_owner: form.isOwner,
+              phone: form.businessPhone || null,
+            })
+            .eq("user_id", data.user.id),
+        ]);
+      }
+
+      toast({
+        title: "Welcome to VenDoor",
+        description: "Check your inbox to verify your business email.",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      toast({ title: "Sign up failed", description: msg, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -93,110 +171,136 @@ const Auth = () => {
       toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
       setGoogleLoading(false);
     }
-    // If redirected, browser will navigate; if tokens returned, AuthContext picks it up.
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-1 flex flex-col justify-center px-6 py-10 max-w-md mx-auto w-full">
         {/* Brand */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-7">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <Store size={28} />
           </div>
           <h1 className="text-2xl font-bold text-foreground">VenDoor for Vendors</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin" ? "Sign in to manage your store" : "Create your vendor account"}
+            {mode === "signin"
+              ? "Sign in to manage your store"
+              : signupStep === 1
+              ? "Tell us about your business"
+              : "A bit about you"}
           </p>
         </div>
 
         {/* Mode Switch */}
-        <div className="mb-5 grid grid-cols-2 rounded-xl bg-muted p-1">
-          {(["signin", "signup"] as Mode[]).map((m) => (
+        {!(mode === "signup" && signupStep === 2) && (
+          <div className="mb-5 grid grid-cols-2 rounded-xl bg-muted p-1">
+            {(["signin", "signup"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  setSignupStep(1);
+                }}
+                className={cn(
+                  "rounded-lg py-2 text-xs font-semibold transition-colors",
+                  mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                )}
+              >
+                {m === "signin" ? "Sign In" : "Sign Up"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* SIGN IN */}
+        {mode === "signin" && (
+          <form onSubmit={handleSignIn} className="space-y-3">
+            <FieldEmail value={form.email} onChange={(v) => update("email", v)} />
+            <FieldPassword value={form.password} onChange={(v) => update("password", v)} />
+            <Button type="submit" disabled={submitting} className="w-full mt-2">
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : "Sign In"}
+            </Button>
+          </form>
+        )}
+
+        {/* SIGN UP — STEP 1 */}
+        {mode === "signup" && signupStep === 1 && (
+          <form onSubmit={handleNextSignup} className="space-y-3">
+            <Field
+              id="businessName" label="Business Name" required icon={Building2}
+              value={form.businessName} onChange={(v) => update("businessName", v)}
+              placeholder="Amaka's Kitchen"
+            />
+            <Field
+              id="businessPhone" label="Business Phone (optional)" type="tel" icon={Phone}
+              value={form.businessPhone} onChange={(v) => update("businessPhone", v)}
+              placeholder="+234 801 234 5678"
+            />
+
+            <div className="rounded-xl border border-border p-3 space-y-3">
+              <ToggleRow
+                label="Is your business registered?"
+                checked={form.businessRegistered}
+                onChange={(v) => update("businessRegistered", v)}
+              />
+              <ToggleRow
+                label="Are you the owner?"
+                checked={form.isOwner}
+                onChange={(v) => update("isOwner", v)}
+              />
+            </div>
+
+            <Button type="submit" className="w-full mt-2">Continue</Button>
+          </form>
+        )}
+
+        {/* SIGN UP — STEP 2 */}
+        {mode === "signup" && signupStep === 2 && (
+          <form onSubmit={handleSignUp} className="space-y-3">
             <button
-              key={m}
               type="button"
-              onClick={() => setMode(m)}
-              className={cn(
-                "rounded-lg py-2 text-xs font-semibold transition-colors",
-                mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              )}
+              onClick={() => setSignupStep(1)}
+              className="flex items-center gap-1 text-xs text-muted-foreground active:text-foreground"
             >
-              {m === "signin" ? "Sign In" : "Sign Up"}
+              <ArrowLeft size={12} /> Back
             </button>
-          ))}
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {mode === "signup" && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="businessName" className="text-xs">Business Name</Label>
-                <div className="relative">
-                  <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="businessName"
-                    required
-                    value={form.businessName}
-                    onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-                    placeholder="Amaka's Kitchen"
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-xs">Phone Number</Label>
-                <div className="relative">
-                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    required
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+234 801 234 5678"
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs">Email</Label>
-            <div className="relative">
-              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="email"
-                required
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="vendor@vendoor.com"
-                className="pl-9"
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                id="firstName" label="First Name" required icon={User}
+                value={form.firstName} onChange={(v) => update("firstName", v)}
+                placeholder="Amaka"
+              />
+              <Field
+                id="lastName" label="Last Name" required
+                value={form.lastName} onChange={(v) => update("lastName", v)}
+                placeholder="Johnson"
               />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs">Password</Label>
-            <div className="relative">
-              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="password"
-                required
-                type="password"
-                minLength={6}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="••••••••"
-                className="pl-9"
-              />
-            </div>
-          </div>
 
-          <Button type="submit" disabled={submitting} className="w-full mt-2">
-            {submitting ? <Loader2 size={16} className="animate-spin" /> : (mode === "signin" ? "Sign In" : "Create Account")}
-          </Button>
-        </form>
+            <Field
+              id="personalPhone" label="Personal Phone" required type="tel" icon={Phone}
+              value={form.personalPhone} onChange={(v) => update("personalPhone", v)}
+              placeholder="+234 801 234 5678"
+              hint="We'll verify this with a code."
+            />
+            <Field
+              id="personalEmail" label="Personal Email (optional)" type="email"
+              value={form.personalEmail} onChange={(v) => update("personalEmail", v)}
+              placeholder="amaka@email.com"
+            />
+
+            <div className="h-px bg-border my-2" />
+
+            <FieldEmail value={form.email} onChange={(v) => update("email", v)} label="Business Email" hint="Primary verification." />
+            <FieldPassword value={form.password} onChange={(v) => update("password", v)} />
+
+            <Button type="submit" disabled={submitting} className="w-full mt-2">
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : "Create Account"}
+            </Button>
+          </form>
+        )}
 
         <div className="my-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
@@ -204,13 +308,7 @@ const Auth = () => {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogle}
-          disabled={googleLoading}
-          className="w-full gap-2"
-        >
+        <Button type="button" variant="outline" onClick={handleGoogle} disabled={googleLoading} className="w-full gap-2">
           {googleLoading ? (
             <Loader2 size={16} className="animate-spin" />
           ) : (
@@ -222,5 +320,40 @@ const Auth = () => {
     </div>
   );
 };
+
+// --- helpers ---
+const Field = ({
+  id, label, value, onChange, placeholder, type = "text", required, icon: Icon, hint,
+}: {
+  id: string; label: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; type?: string; required?: boolean; icon?: React.ElementType; hint?: string;
+}) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={id} className="text-xs">{label}</Label>
+    <div className="relative">
+      {Icon && <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
+      <Input
+        id={id} required={required} type={type} value={value}
+        onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className={Icon ? "pl-9" : ""}
+      />
+    </div>
+    {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
+  </div>
+);
+
+const FieldEmail = ({ value, onChange, label = "Email", hint }: { value: string; onChange: (v: string) => void; label?: string; hint?: string }) => (
+  <Field id="email" label={label} required type="email" icon={Mail} value={value} onChange={onChange} placeholder="vendor@vendoor.com" hint={hint} />
+);
+const FieldPassword = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  <Field id="password" label="Password" required type="password" icon={Lock} value={value} onChange={onChange} placeholder="••••••••" />
+);
+
+const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
+  <div className="flex items-center justify-between">
+    <span className="text-xs text-foreground">{label}</span>
+    <Switch checked={checked} onCheckedChange={onChange} />
+  </div>
+);
 
 export default Auth;

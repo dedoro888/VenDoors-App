@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2 } from "lucide-react";
+import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -26,8 +27,9 @@ const menuSections = [
     title: "Business",
     items: [
       { icon: Building2, label: "Business Profile", subtitle: "Name, address, logo, banner", path: "/profile/business-profile" },
+      { icon: Sparkles, label: "Business Suite", subtitle: "View & upgrade your plan", path: "/profile/packages" },
       { icon: Store, label: "Store Settings", subtitle: "Operating preferences", path: "/profile/store-settings" },
-      { icon: Clock, label: "Operating Hours", subtitle: "Set your schedule", path: "/profile/operating-hours" },
+      { icon: Clock, label: "Operating Hours", subtitle: "Schedule & pre-orders", path: "/profile/operating-hours" },
       { icon: CreditCard, label: "Payout Settings", subtitle: "Bank account details", path: "/profile/payout-settings" },
     ],
   },
@@ -44,6 +46,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { storeOpen, setStoreOpen } = useStore();
   const { user, signOut } = useAuth();
+  const { subscription } = useSubscription();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
   const [profile, setProfile] = useState<{ business_name: string | null; logo_url: string | null; banner_url: string | null } | null>(null);
@@ -106,6 +109,20 @@ const Profile = () => {
             <p className="text-lg font-semibold text-secondary-foreground">{businessName}</p>
             <p className="text-xs text-secondary-foreground/60">{email}</p>
           </button>
+          {subscription?.plan && (
+            <button
+              onClick={() => navigate("/profile/packages")}
+              className={cn(
+                "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                subscription.plan.tier === "premium" && "bg-amber-500/15 text-amber-600",
+                subscription.plan.tier === "pro" && "bg-primary/15 text-primary",
+                subscription.plan.tier === "standard" && "bg-muted text-muted-foreground"
+              )}
+            >
+              <Sparkles size={10} />
+              {subscription.plan.name} Plan
+            </button>
+          )}
         </div>
       </div>
 
