@@ -9,6 +9,8 @@ import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
+import VerifyAccount from "./pages/VerifyAccount";
+import VerifyPhone from "./pages/VerifyPhone";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Menu from "./pages/Menu";
@@ -25,6 +27,12 @@ import OperatingHours from "./pages/OperatingHours";
 import PayoutSettings from "./pages/PayoutSettings";
 import HelpSupport from "./pages/HelpSupport";
 import AppSettings from "./pages/AppSettings";
+import Packages from "./pages/Packages";
+import SetupLayout from "./pages/setup/SetupLayout";
+import SetupPayout from "./pages/setup/SetupPayout";
+import SetupBusiness from "./pages/setup/SetupBusiness";
+import SetupHours from "./pages/setup/SetupHours";
+import SetupPlan from "./pages/setup/SetupPlan";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 
@@ -51,6 +59,18 @@ const App = () => (
                 {/* Public verification page (QR scanners) */}
                 <Route path="/verify/:reference" element={<VerifyTransaction />} />
 
+                {/* Verification + setup wizard (auth required, but no setup gating) */}
+                <Route path="/verify-account" element={<ProtectedRoute><VerifyAccount /></ProtectedRoute>} />
+                <Route path="/verify-phone" element={<ProtectedRoute><VerifyPhone /></ProtectedRoute>} />
+                <Route path="/onboarding/business-profile" element={<ProtectedRoute><OnboardBusinessProfile /></ProtectedRoute>} />
+                <Route path="/setup" element={<ProtectedRoute><SetupLayout /></ProtectedRoute>}>
+                  <Route index element={<SetupPayout />} />
+                  <Route path="payout" element={<SetupPayout />} />
+                  <Route path="business" element={<SetupBusiness />} />
+                  <Route path="hours" element={<SetupHours />} />
+                  <Route path="plan" element={<SetupPlan />} />
+                </Route>
+
                 {/* Protected app */}
                 <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
                 <Route path="/orders" element={<Protected><Orders /></Protected>} />
@@ -60,12 +80,12 @@ const App = () => (
                 <Route path="/earnings" element={<Protected><Earnings /></Protected>} />
                 <Route path="/earnings/transactions/:id" element={<Protected><TransactionDetail /></Protected>} />
                 <Route path="/notifications" element={<Protected><Notifications /></Protected>} />
-                <Route path="/onboarding/business-profile" element={<ProtectedRoute><OnboardBusinessProfile /></ProtectedRoute>} />
                 <Route path="/profile" element={<Protected><Profile /></Protected>} />
                 <Route path="/profile/business-profile" element={<Protected><BusinessProfile /></Protected>} />
                 <Route path="/profile/store-settings" element={<Protected><StoreSettings /></Protected>} />
                 <Route path="/profile/operating-hours" element={<Protected><OperatingHours /></Protected>} />
                 <Route path="/profile/payout-settings" element={<Protected><PayoutSettings /></Protected>} />
+                <Route path="/profile/packages" element={<Protected><Packages /></Protected>} />
                 <Route path="/profile/help-support" element={<Protected><HelpSupport /></Protected>} />
                 <Route path="/profile/app-settings" element={<Protected><AppSettings /></Protected>} />
                 <Route path="*" element={<NotFound />} />

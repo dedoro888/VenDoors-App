@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2 } from "lucide-react";
+import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -26,8 +27,9 @@ const menuSections = [
     title: "Business",
     items: [
       { icon: Building2, label: "Business Profile", subtitle: "Name, address, logo, banner", path: "/profile/business-profile" },
+      { icon: Sparkles, label: "Business Suite", subtitle: "View & upgrade your plan", path: "/profile/packages" },
       { icon: Store, label: "Store Settings", subtitle: "Operating preferences", path: "/profile/store-settings" },
-      { icon: Clock, label: "Operating Hours", subtitle: "Set your schedule", path: "/profile/operating-hours" },
+      { icon: Clock, label: "Operating Hours", subtitle: "Schedule & pre-orders", path: "/profile/operating-hours" },
       { icon: CreditCard, label: "Payout Settings", subtitle: "Bank account details", path: "/profile/payout-settings" },
     ],
   },
