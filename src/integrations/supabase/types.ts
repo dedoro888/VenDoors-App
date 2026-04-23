@@ -88,20 +88,164 @@ export type Database = {
           },
         ]
       }
+      payout_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      personal_info: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          personal_email: string | null
+          personal_phone: string | null
+          personal_phone_verified: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          personal_email?: string | null
+          personal_phone?: string | null
+          personal_phone_verified?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          personal_email?: string | null
+          personal_phone?: string | null
+          personal_phone_verified?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          created_at: string
+          currency: string
+          features: Json
+          id: string
+          name: string
+          price_monthly: number
+          sort_order: number
+          tagline: string | null
+          tier: Database["public"]["Enums"]["plan_tier"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          features?: Json
+          id?: string
+          name: string
+          price_monthly?: number
+          sort_order?: number
+          tagline?: string | null
+          tier: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          features?: Json
+          id?: string
+          name?: string
+          price_monthly?: number
+          sort_order?: number
+          tagline?: string | null
+          tier?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pre_order_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          end_time: string
+          id: string
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          end_time?: string
+          id?: string
+          start_time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          end_time?: string
+          id?: string
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           banner_url: string | null
           business_address: string | null
+          business_email_verified: boolean
           business_lat: number | null
           business_lng: number | null
           business_name: string | null
+          business_registered: boolean | null
           created_at: string
           email: string | null
           id: string
+          is_owner: boolean | null
           logo_url: string | null
+          personal_phone_verified: boolean
           phone: string | null
           profile_completed: boolean
+          setup_completed: boolean
+          setup_step: number
           updated_at: string
           user_id: string
         }
@@ -109,15 +253,21 @@ export type Database = {
           avatar_url?: string | null
           banner_url?: string | null
           business_address?: string | null
+          business_email_verified?: boolean
           business_lat?: number | null
           business_lng?: number | null
           business_name?: string | null
+          business_registered?: boolean | null
           created_at?: string
           email?: string | null
           id?: string
+          is_owner?: boolean | null
           logo_url?: string | null
+          personal_phone_verified?: boolean
           phone?: string | null
           profile_completed?: boolean
+          setup_completed?: boolean
+          setup_step?: number
           updated_at?: string
           user_id: string
         }
@@ -125,15 +275,21 @@ export type Database = {
           avatar_url?: string | null
           banner_url?: string | null
           business_address?: string | null
+          business_email_verified?: boolean
           business_lat?: number | null
           business_lng?: number | null
           business_name?: string | null
+          business_registered?: boolean | null
           created_at?: string
           email?: string | null
           id?: string
+          is_owner?: boolean | null
           logo_url?: string | null
+          personal_phone_verified?: boolean
           phone?: string | null
           profile_completed?: boolean
+          setup_completed?: boolean
+          setup_step?: number
           updated_at?: string
           user_id?: string
         }
@@ -223,6 +379,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          plan_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          plan_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          plan_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           available_balance: number
@@ -278,6 +475,8 @@ export type Database = {
         | "completed"
         | "cancelled"
       notification_type: "order" | "payment" | "profile" | "system"
+      plan_tier: "standard" | "pro" | "premium"
+      subscription_status: "active" | "pending" | "cancelled" | "expired"
       transaction_status: "pending" | "completed" | "failed"
       transaction_type: "sale" | "payout" | "refund" | "adjustment"
     }
@@ -415,6 +614,8 @@ export const Constants = {
         "cancelled",
       ],
       notification_type: ["order", "payment", "profile", "system"],
+      plan_tier: ["standard", "pro", "premium"],
+      subscription_status: ["active", "pending", "cancelled", "expired"],
       transaction_status: ["pending", "completed", "failed"],
       transaction_type: ["sale", "payout", "refund", "adjustment"],
     },
