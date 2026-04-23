@@ -46,6 +46,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { storeOpen, setStoreOpen } = useStore();
   const { user, signOut } = useAuth();
+  const { subscription } = useSubscription();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
   const [profile, setProfile] = useState<{ business_name: string | null; logo_url: string | null; banner_url: string | null } | null>(null);
