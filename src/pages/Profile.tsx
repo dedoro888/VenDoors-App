@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,8 @@ const menuSections = [
   {
     title: "Business",
     items: [
-      { icon: Store, label: "Store Settings", subtitle: "Name, address, logo", path: "/profile/store-settings" },
+      { icon: Building2, label: "Business Profile", subtitle: "Name, address, logo, banner", path: "/profile/business-profile" },
+      { icon: Store, label: "Store Settings", subtitle: "Operating preferences", path: "/profile/store-settings" },
       { icon: Clock, label: "Operating Hours", subtitle: "Set your schedule", path: "/profile/operating-hours" },
       { icon: CreditCard, label: "Payout Settings", subtitle: "Bank account details", path: "/profile/payout-settings" },
     ],
@@ -44,10 +46,29 @@ const Profile = () => {
   const { user, signOut } = useAuth();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
+  const [profile, setProfile] = useState<{ business_name: string | null; logo_url: string | null; banner_url: string | null } | null>(null);
 
-  const businessName = (user?.user_metadata?.business_name as string) || "Your Store";
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("business_name, logo_url, banner_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setProfile(data ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const businessName = profile?.business_name || (user?.user_metadata?.business_name as string) || "Your Store";
   const email = user?.email || "";
   const initials = businessName.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
+  const logoUrl = profile?.logo_url;
+  const bannerUrl = profile?.banner_url;
 
   const handleLogout = async () => {
     setLogoutOpen(false);
