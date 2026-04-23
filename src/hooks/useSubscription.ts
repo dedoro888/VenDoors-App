@@ -50,8 +50,7 @@ export const useSubscription = () => {
         status: data.status,
         started_at: data.started_at,
         ends_at: data.ends_at,
-        // @ts-expect-error supabase types union
-        plan: data.plans as Plan | null,
+        plan: (data.plans as unknown) as Plan | null,
       });
     } else {
       setSubscription(null);
