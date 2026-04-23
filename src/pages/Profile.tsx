@@ -109,6 +109,20 @@ const Profile = () => {
             <p className="text-lg font-semibold text-secondary-foreground">{businessName}</p>
             <p className="text-xs text-secondary-foreground/60">{email}</p>
           </button>
+          {subscription?.plan && (
+            <button
+              onClick={() => navigate("/profile/packages")}
+              className={cn(
+                "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                subscription.plan.tier === "premium" && "bg-amber-500/15 text-amber-600",
+                subscription.plan.tier === "pro" && "bg-primary/15 text-primary",
+                subscription.plan.tier === "standard" && "bg-muted text-muted-foreground"
+              )}
+            >
+              <Sparkles size={10} />
+              {subscription.plan.name} Plan
+            </button>
+          )}
         </div>
       </div>
 
