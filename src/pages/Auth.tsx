@@ -326,7 +326,7 @@ const Field = ({
   id, label, value, onChange, placeholder, type = "text", required, icon: Icon, hint,
 }: {
   id: string; label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; required?: boolean; icon?: React.ComponentType<{ size?: number; className?: string }>; hint?: string;
+  placeholder?: string; type?: string; required?: boolean; icon?: React.ElementType; hint?: string;
 }) => (
   <div className="space-y-1.5">
     <Label htmlFor={id} className="text-xs">{label}</Label>
