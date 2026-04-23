@@ -78,21 +78,35 @@ const Profile = () => {
 
   return (
     <div className="pb-24">
-      {/* Profile Header */}
-      <div className="bg-secondary px-5 pb-6 pt-12 text-center">
-        <button
-          onClick={() => setAvatarSheetOpen(true)}
-          className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground group"
-        >
-          {initials}
-          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-active:opacity-100 transition-opacity">
-            <Camera size={18} className="text-primary-foreground" />
-          </div>
-        </button>
-        <button onClick={() => navigate("/profile/store-settings")} className="mt-3 block mx-auto">
-          <p className="text-lg font-semibold text-secondary-foreground">{businessName}</p>
-          <p className="text-xs text-secondary-foreground/60">{email}</p>
-        </button>
+      {/* Profile Header with cover banner */}
+      <div className="relative bg-secondary">
+        <div className="h-28 w-full overflow-hidden">
+          {bannerUrl ? (
+            <img src={bannerUrl} alt="Cover banner" className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-primary/30 to-secondary" />
+          )}
+        </div>
+        <div className="px-5 pb-6 pt-0 text-center">
+          <button
+            onClick={() => navigate("/profile/business-profile")}
+            className="relative -mt-10 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground ring-4 ring-secondary overflow-hidden group"
+            aria-label="Edit business profile"
+          >
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-active:opacity-100 transition-opacity">
+              <Camera size={18} className="text-primary-foreground" />
+            </div>
+          </button>
+          <button onClick={() => navigate("/profile/business-profile")} className="mt-3 block mx-auto">
+            <p className="text-lg font-semibold text-secondary-foreground">{businessName}</p>
+            <p className="text-xs text-secondary-foreground/60">{email}</p>
+          </button>
+        </div>
       </div>
 
       {/* Store Status Toggle — separate card below header */}
