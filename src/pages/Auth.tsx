@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -239,14 +239,14 @@ const Auth = () => {
             />
 
             <div className="rounded-xl border border-border p-3 space-y-3">
-              <ToggleRow
+              <YesNoRow
                 label="Is your business registered?"
-                checked={form.businessRegistered}
+                value={form.businessRegistered}
                 onChange={(v) => update("businessRegistered", v)}
               />
-              <ToggleRow
+              <YesNoRow
                 label="Are you the owner?"
-                checked={form.isOwner}
+                value={form.isOwner}
                 onChange={(v) => update("isOwner", v)}
               />
             </div>
@@ -349,10 +349,18 @@ const FieldPassword = ({ value, onChange }: { value: string; onChange: (v: strin
   <Field id="password" label="Password" required type="password" icon={Lock} value={value} onChange={onChange} placeholder="••••••••" />
 );
 
-const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
-  <div className="flex items-center justify-between">
-    <span className="text-xs text-foreground">{label}</span>
-    <Switch checked={checked} onCheckedChange={onChange} />
+const YesNoRow = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
+  <div className="flex items-center justify-between gap-3">
+    <span className="text-xs text-foreground flex-1">{label}</span>
+    <Select value={value ? "yes" : "no"} onValueChange={(v) => onChange(v === "yes")}>
+      <SelectTrigger className="w-24 h-9 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="yes">Yes</SelectItem>
+        <SelectItem value="no">No</SelectItem>
+      </SelectContent>
+    </Select>
   </div>
 );
 
