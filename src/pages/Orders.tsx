@@ -78,6 +78,8 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [riderAssignOrderId, setRiderAssignOrderId] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const updateOrder = (id: string, updates: Partial<Order>) => {
@@ -129,7 +131,15 @@ const Orders = () => {
     return acc;
   }, {} as Record<StatusFilter, number>);
 
-  const filteredOrders = allOrders.filter((o) => matchesFilter(o, activeFilter));
+  const q = searchQuery.trim().toLowerCase();
+  const filteredOrders = allOrders
+    .filter((o) => matchesFilter(o, activeFilter))
+    .filter((o) =>
+      !q ||
+      o.id.toLowerCase().includes(q) ||
+      o.customer.toLowerCase().includes(q) ||
+      o.item.toLowerCase().includes(q)
+    );
   const isHistoryFilter = activeFilter === "completed" || activeFilter === "cancelled";
 
   return (
@@ -138,14 +148,39 @@ const Orders = () => {
       <div className="sticky top-0 z-20 bg-card px-5 pb-3 pt-12 shadow-sm border-b border-border">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Orders</h1>
-          <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted">
-            <Search size={18} className="text-muted-foreground" />
+          <button
+            onClick={() => {
+              const next = !searchOpen;
+              setSearchOpen(next);
+              if (!next) setSearchQuery("");
+            }}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
+              searchOpen ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            )}
+            aria-label={searchOpen ? "Close search" : "Open search"}
+          >
+            <Search size={18} />
           </button>
         </div>
+
+        {searchOpen && (
+          <div className="mt-3 relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by order ID, customer, or item..."
+              className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+          </div>
+        )}
       </div>
 
       {/* Status Filter Bar */}
-      <div className="sticky top-[84px] z-10 bg-background border-b border-border">
+      <div className={cn("sticky z-10 bg-background border-b border-border", searchOpen ? "top-[140px]" : "top-[84px]")}>
         <div
           className="flex gap-2 overflow-x-auto px-4 py-3 [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
