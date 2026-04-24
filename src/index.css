@@ -53,6 +53,9 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 220 12% 18%;
     --sidebar-ring: 152 100% 50%;
+
+    --gradient-header: linear-gradient(135deg, hsl(173 97% 19%) 0%, hsl(173 97% 12%) 60%, hsl(220 15% 10%) 100%);
+    --shadow-avatar: 0 10px 30px -8px hsl(173 97% 8% / 0.6), 0 4px 12px -2px hsl(0 0% 0% / 0.4);
   }
 
   .light {
@@ -101,6 +104,9 @@
     --sidebar-accent-foreground: 220 15% 12%;
     --sidebar-border: 220 12% 88%;
     --sidebar-ring: 152 100% 35%;
+
+    --gradient-header: linear-gradient(135deg, hsl(173 97% 25%) 0%, hsl(173 97% 19%) 60%, hsl(152 80% 30%) 100%);
+    --shadow-avatar: 0 10px 30px -8px hsl(173 97% 15% / 0.4), 0 4px 12px -2px hsl(0 0% 0% / 0.15);
   }
 }
 
@@ -148,8 +154,34 @@
   50% { opacity: 0.6; }
 }
 
+@keyframes avatarIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes softFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-avatar-in {
+  animation: avatarIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-soft-fade {
+  animation: softFade 0.4s ease-out forwards;
+}
+
+.bg-header-gradient {
+  background: var(--gradient-header);
+}
+
+.shadow-avatar {
+  box-shadow: var(--shadow-avatar);
 }
 
 .animate-pulse-glow {
