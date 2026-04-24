@@ -1,7 +1,6 @@
 import { Home, ClipboardList, UtensilsCrossed, Wallet, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import StoreStatusIndicator from "@/components/StoreStatusIndicator";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/dashboard" },
@@ -11,23 +10,33 @@ const navItems = [
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
+// Routes where the bottom nav must be fully hidden
+const HIDDEN_PREFIXES = [
+  "/",          // index redirect (handled exactly below)
+  "/auth",
+  "/verify",
+  "/verify-account",
+  "/verify-phone",
+  "/setup",
+  "/onboarding",
+];
+
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const path = location.pathname;
 
-  const hideNav = location.pathname === "/";
+  const hideNav =
+    path === "/" ||
+    HIDDEN_PREFIXES.some((p) => p !== "/" && (path === p || path.startsWith(p + "/")));
 
   if (hideNav) return null;
 
   return (
     <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 border-t border-border bg-card/95 backdrop-blur-md">
-      {/* Store status bar */}
-      <div className="flex justify-center py-1 border-b border-border/50">
-        <StoreStatusIndicator />
-      </div>
       <div className="flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = path === item.path;
           return (
             <button
               key={item.path}
