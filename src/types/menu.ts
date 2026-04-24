@@ -8,7 +8,7 @@ export interface SideItem {
   id: string;
   name: string;
   price: number;
-  category: SideCategory;
+  category?: SideCategory;
   customCategory?: string;
 }
 
