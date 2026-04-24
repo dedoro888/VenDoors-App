@@ -1,17 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Package, DollarSign, Clock } from "lucide-react";
 import ToggleSwitch from "@/components/ToggleSwitch";
 import WeeklyChart from "@/components/WeeklyChart";
 import NotificationBell from "@/components/NotificationBell";
+import StoreStatusIndicator from "@/components/StoreStatusIndicator";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
   const { storeOpen, setStoreOpen, scheduleOpen } = useStore();
   const { user } = useAuth();
   const [weeklyExpanded, setWeeklyExpanded] = useState(true);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("logo_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setLogoUrl(data?.logo_url ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const businessInitials = (user?.user_metadata?.business_name || user?.email || "VV")
     .split(" ")
@@ -41,8 +58,15 @@ const Dashboard = () => {
               <p className="text-xs text-secondary-foreground/50">Here's your store overview</p>
             </div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-            {businessInitials}
+          <div className="flex items-center gap-2">
+            <StoreStatusIndicator />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
+              ) : (
+                businessInitials
+              )}
+            </div>
           </div>
         </div>
       </div>
