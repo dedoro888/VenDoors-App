@@ -7,7 +7,7 @@ import { StoreProvider } from "@/contexts/StoreContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Onboarding from "./pages/Onboarding";
+import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import VerifyAccount from "./pages/VerifyAccount";
 import VerifyPhone from "./pages/VerifyPhone";
@@ -54,7 +54,7 @@ const App = () => (
             <Sonner />
             <div className="mx-auto max-w-md min-h-screen bg-background">
               <Routes>
-                <Route path="/" element={<Onboarding />} />
+                <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 {/* Public verification page (QR scanners) */}
                 <Route path="/verify/:reference" element={<VerifyTransaction />} />
