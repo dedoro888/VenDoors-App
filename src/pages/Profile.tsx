@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles, Trash2 } from "lucide-react";
+import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles, Trash2, Pencil, Share2, Crown, Award, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
@@ -125,54 +125,98 @@ const Profile = () => {
     }
   };
 
+  const tier = subscription?.plan?.tier;
+  const tierLabel = tier ? `${tier.toUpperCase()} VENDOR` : null;
+  const TierIcon = tier === "premium" ? Crown : tier === "pro" ? Award : Shield;
+
   return (
     <div className="pb-24">
-      {/* Profile Header with cover banner */}
-      <div className="relative bg-secondary">
-        <div className="h-28 w-full overflow-hidden">
-          {bannerUrl ? (
-            <img src={bannerUrl} alt="Cover banner" className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full bg-gradient-to-br from-primary/30 to-secondary" />
-          )}
-        </div>
-        <div className="px-5 pb-6 pt-0 text-center">
+      {/* Profile Header — layered gradient with banner overlay */}
+      <header className="relative overflow-hidden bg-header-gradient pt-[max(env(safe-area-inset-top),1rem)]">
+        {/* Optional blurred banner backdrop */}
+        {bannerUrl && (
+          <div className="absolute inset-0 -z-0">
+            <img
+              src={bannerUrl}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover scale-110 blur-2xl opacity-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-secondary/70 via-secondary/60 to-background/80" />
+          </div>
+        )}
+
+        <div className="relative z-10 px-5 pb-6 pt-6 flex flex-col items-center text-center">
+          {/* Avatar */}
           <button
             onClick={() => navigate("/profile/business-profile")}
-            className="relative -mt-10 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground ring-4 ring-secondary overflow-hidden group"
+            className="relative h-20 w-20 rounded-full bg-primary text-2xl font-bold text-primary-foreground ring-[3px] ring-background/90 shadow-avatar overflow-hidden group animate-avatar-in flex items-center justify-center"
             aria-label="Edit business profile"
           >
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
             ) : (
-              initials
+              <span>{initials}</span>
             )}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-active:opacity-100 transition-opacity">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 group-active:opacity-100 transition-opacity">
               <Camera size={18} className="text-primary-foreground" />
             </div>
           </button>
-          <button onClick={() => navigate("/profile/business-profile")} className="mt-3 block mx-auto">
-            <p className="text-lg font-semibold text-secondary-foreground">{businessName}</p>
-            <p className="text-xs text-secondary-foreground/60">{email}</p>
-          </button>
-          {subscription?.plan && (
+
+          {/* Identity */}
+          <div className="mt-3 animate-fade-in-up stagger-1 max-w-full">
+            <h1 className="text-[19px] font-semibold leading-tight text-secondary-foreground truncate px-2">
+              {businessName}
+            </h1>
+            {email && (
+              <p className="mt-0.5 text-[12px] text-secondary-foreground/70 truncate px-2">
+                {email}
+              </p>
+            )}
+          </div>
+
+          {/* Package Badge */}
+          {tierLabel && (
             <button
               onClick={() => navigate("/profile/packages")}
               className={cn(
-                "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-                subscription.plan.tier === "premium" && "bg-warning/15 text-warning",
-                subscription.plan.tier === "pro" && "bg-primary/15 text-primary",
-                subscription.plan.tier === "standard" && "bg-muted text-muted-foreground"
+                "mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm border animate-soft-fade stagger-2",
+                tier === "premium" && "bg-warning/20 text-warning border-warning/30",
+                tier === "pro" && "bg-primary/20 text-primary border-primary/30",
+                tier === "standard" && "bg-card/40 text-secondary-foreground border-border/40"
               )}
             >
-              <Sparkles size={10} />
-              {subscription.plan.name} Plan
+              <TierIcon size={11} />
+              {tierLabel}
             </button>
           )}
-        </div>
-      </div>
 
-      {/* Store Status Toggle — separate card below header */}
+          {/* Quick Actions */}
+          <div className="mt-4 flex items-center gap-2 animate-soft-fade stagger-3">
+            <button
+              onClick={() => navigate("/profile/business-profile")}
+              className="inline-flex items-center gap-1.5 rounded-full bg-card/30 hover:bg-card/40 active:bg-card/50 backdrop-blur-sm border border-border/30 px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors"
+            >
+              <Pencil size={13} />
+              Edit Profile
+            </button>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: businessName, text: `Check out ${businessName} on VenDoor` }).catch(() => {});
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full bg-card/30 hover:bg-card/40 active:bg-card/50 backdrop-blur-sm border border-border/30 px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors"
+              aria-label="Share store"
+            >
+              <Share2 size={13} />
+              Share
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Store Status — separate card below header, no overlap */}
       <div className="px-4 mt-5 mb-4">
         <button
           onClick={() => setStoreOpen(!storeOpen)}
@@ -180,6 +224,8 @@ const Profile = () => {
             "flex w-full items-center justify-between rounded-2xl px-4 py-3.5 shadow-sm transition-colors",
             storeOpen ? "bg-primary/10 border border-primary/20" : "bg-destructive/10 border border-destructive/20"
           )}
+          aria-pressed={storeOpen}
+          aria-label={storeOpen ? "Store is open. Tap to close." : "Store is closed. Tap to open."}
         >
           <div className="flex items-center gap-3">
             <div className={cn("h-3 w-3 rounded-full", storeOpen ? "bg-primary animate-live-pulse" : "bg-destructive animate-pulse-red")} />
