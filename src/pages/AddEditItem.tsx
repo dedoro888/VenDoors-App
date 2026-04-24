@@ -3,7 +3,7 @@ import { ArrowLeft, Upload, X, Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { MENU_CATEGORIES, PREP_TIME_OPTIONS, type MenuItem, type MenuCategory, type AvailabilityStatus, type SideItem } from "@/types/menu";
+import { MENU_CATEGORIES, PREP_TIME_OPTIONS, SIDE_CATEGORIES, type MenuItem, type MenuCategory, type AvailabilityStatus, type SideItem, type SideCategory } from "@/types/menu";
 import { useToast } from "@/hooks/use-toast";
 
 const AddEditItem = () => {
@@ -31,6 +31,7 @@ const AddEditItem = () => {
   // New side form
   const [newSideName, setNewSideName] = useState("");
   const [newSidePrice, setNewSidePrice] = useState("");
+  const [newSideCategory, setNewSideCategory] = useState<SideCategory>("Sides");
 
   useEffect(() => {
     if (isEdit) {
@@ -70,7 +71,7 @@ const AddEditItem = () => {
     const trimmedName = newSideName.trim();
     const parsedPrice = Number(newSidePrice);
     if (!trimmedName || !newSidePrice || parsedPrice <= 0) return;
-    setSides((prev) => [...prev, { id: `side-${Date.now()}`, name: trimmedName, price: parsedPrice }]);
+    setSides((prev) => [...prev, { id: `side-${Date.now()}`, name: trimmedName, price: parsedPrice, category: newSideCategory }]);
     setNewSideName("");
     setNewSidePrice("");
   };

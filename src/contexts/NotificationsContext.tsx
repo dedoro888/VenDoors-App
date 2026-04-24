@@ -106,20 +106,31 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
   }, [user, refresh]);
 
   const markRead = async (id: string) => {
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+    const now = new Date().toISOString();
+    // Optimistic — update UI instantly
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id && !n.read_at ? { ...n, read_at: now } : n))
+    );
+    await supabase.from("notifications").update({ read_at: now }).eq("id", id);
   };
 
   const markAllRead = async () => {
     if (!user) return;
+    const now = new Date().toISOString();
+    setNotifications((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: now })));
     await supabase
       .from("notifications")
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: now })
       .eq("user_id", user.id)
       .is("read_at", null);
   };
 
   const resolve = async (id: string) => {
     const now = new Date().toISOString();
+    // Optimistic — grey out instantly
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, resolved_at: now, read_at: now } : n))
+    );
     await supabase.from("notifications").update({ resolved_at: now, read_at: now }).eq("id", id);
   };
 

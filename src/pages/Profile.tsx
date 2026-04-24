@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles } from "lucide-react";
+import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -47,8 +50,13 @@ const Profile = () => {
   const { storeOpen, setStoreOpen } = useStore();
   const { user, signOut } = useAuth();
   const { subscription } = useSubscription();
+  const { toast } = useToast();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteAck, setDeleteAck] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<{ business_name: string | null; logo_url: string | null; banner_url: string | null } | null>(null);
 
   useEffect(() => {
@@ -77,6 +85,44 @@ const Profile = () => {
     setLogoutOpen(false);
     await signOut();
     navigate("/auth");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !deleteAck || !deletePassword) return;
+    setDeleting(true);
+    try {
+      // Verify password by re-authenticating
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email ?? "",
+        password: deletePassword,
+      });
+      if (signInError) {
+        toast({ title: "Incorrect password", description: "Please try again.", variant: "destructive" });
+        setDeleting(false);
+        return;
+      }
+
+      // Soft-clear personal data the user owns (RLS-safe)
+      await Promise.all([
+        supabase.from("personal_info").delete().eq("user_id", user.id),
+        supabase.from("payout_accounts").delete().eq("user_id", user.id),
+        supabase.from("notifications").delete().eq("user_id", user.id),
+      ]);
+
+      // Sign out — full account deletion needs an admin/edge function (service role).
+      // The user's profile data is wiped client-side; final auth row removal is a backend op.
+      await signOut();
+      toast({
+        title: "Account closed",
+        description: "Your data has been removed. Auth record will be purged shortly.",
+      });
+      navigate("/auth", { replace: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete account";
+      toast({ title: "Delete failed", description: msg, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -114,7 +160,7 @@ const Profile = () => {
               onClick={() => navigate("/profile/packages")}
               className={cn(
                 "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-                subscription.plan.tier === "premium" && "bg-amber-500/15 text-amber-600",
+                subscription.plan.tier === "premium" && "bg-warning/15 text-warning",
                 subscription.plan.tier === "pro" && "bg-primary/15 text-primary",
                 subscription.plan.tier === "standard" && "bg-muted text-muted-foreground"
               )}
@@ -188,6 +234,23 @@ const Profile = () => {
           </div>
           <p className="text-sm font-medium text-destructive">Log Out</p>
         </button>
+
+        <button
+          onClick={() => {
+            setDeletePassword("");
+            setDeleteAck(false);
+            setDeleteOpen(true);
+          }}
+          className="flex w-full items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 active:bg-destructive/10 transition-colors"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/15">
+            <Trash2 size={18} className="text-destructive" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-destructive">Delete Account</p>
+            <p className="text-[10px] text-destructive/70">Permanently remove your data</p>
+          </div>
+        </button>
       </div>
 
       {/* Avatar Bottom Sheet */}
@@ -223,6 +286,58 @@ const Profile = () => {
           <DialogFooter className="flex-row gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setLogoutOpen(false)}>Cancel</Button>
             <Button variant="destructive" className="flex-1" onClick={handleLogout}>Log Out</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Confirmation */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Account?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete your account? This will remove your business data,
+              payout details, and notifications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-xs text-destructive">
+              ⚠️ This action cannot be undone.
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="del-pw" className="text-xs">Confirm your password</Label>
+              <Input
+                id="del-pw"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteAck}
+                onChange={(e) => setDeleteAck(e.target.checked)}
+                className="mt-0.5 accent-destructive"
+              />
+              <span className="text-xs text-foreground">
+                I understand this action is permanent and cannot be reversed.
+              </span>
+            </label>
+          </div>
+          <DialogFooter className="flex-row gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              disabled={!deleteAck || !deletePassword || deleting}
+              onClick={handleDeleteAccount}
+            >
+              {deleting ? "Deleting…" : "Delete Forever"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

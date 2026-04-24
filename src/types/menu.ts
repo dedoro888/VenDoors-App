@@ -1,9 +1,15 @@
 export type AvailabilityStatus = "available" | "unavailable" | "pre-order";
 
+export type SideCategory = "Drinks" | "Extras" | "Sides" | "Add-ons" | "Other";
+
+export const SIDE_CATEGORIES: SideCategory[] = ["Drinks", "Extras", "Sides", "Add-ons", "Other"];
+
 export interface SideItem {
   id: string;
   name: string;
   price: number;
+  category?: SideCategory;
+  customCategory?: string;
 }
 
 export interface MenuItem {

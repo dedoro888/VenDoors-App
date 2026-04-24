@@ -8,6 +8,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
+interface BankSnapshot {
+  account_name?: string;
+  account_number?: string;
+  bank_name?: string;
+}
+
 interface Transaction {
   id: string;
   reference: string;
@@ -21,6 +27,7 @@ interface Transaction {
   order_id: string | null;
   description: string | null;
   created_at: string;
+  bank_account_snapshot: BankSnapshot | null;
 }
 
 const formatNgn = (n: number) =>
@@ -110,7 +117,19 @@ const TransactionDetail = () => {
         {/* Details */}
         <div className="rounded-2xl bg-card p-4 shadow-sm space-y-3">
           <Row label="Sender" value={txn.sender || "—"} />
-          <Row label="Receiver" value={txn.receiver || "—"} />
+          {txn.bank_account_snapshot ? (
+            <>
+              <Row label="Receiver" value={txn.bank_account_snapshot.account_name || txn.receiver || "—"} />
+              {txn.bank_account_snapshot.bank_name && (
+                <Row label="Bank" value={txn.bank_account_snapshot.bank_name} />
+              )}
+              {txn.bank_account_snapshot.account_number && (
+                <Row label="Account #" value={txn.bank_account_snapshot.account_number} valueClass="font-mono" />
+              )}
+            </>
+          ) : (
+            <Row label="Receiver" value={txn.receiver || "—"} />
+          )}
           <Row label="Reference">
             <button onClick={copyRef} className="flex items-center gap-1.5 text-xs font-mono text-foreground active:opacity-70">
               {txn.reference}
@@ -125,6 +144,16 @@ const TransactionDetail = () => {
               <Row label="Gross" value={formatNgn(Number(txn.gross_amount))} />
               <Row label="Commission" value={`- ${formatNgn(Number(txn.commission_amount))}`} valueClass="text-warning" />
               <Row label="Net" value={formatNgn(Number(txn.net_amount))} valueClass="text-primary font-bold" />
+            </>
+          )}
+          {txn.type === "payout" && (
+            <>
+              <div className="h-px bg-border my-1" />
+              <Row label="Amount" value={formatNgn(Number(txn.gross_amount))} />
+              {Number(txn.commission_amount) > 0 && (
+                <Row label="Fee" value={`- ${formatNgn(Number(txn.commission_amount))}`} valueClass="text-warning" />
+              )}
+              <Row label="Net Payout" value={formatNgn(Number(txn.net_amount))} valueClass="text-primary font-bold" />
             </>
           )}
           {txn.description && <Row label="Note" value={txn.description} />}

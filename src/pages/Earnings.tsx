@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, TrendingUp, Receipt, Calculator, Percent, Banknote, ChevronDown, ArrowDownToLine, ArrowUpFromLine, Plus } from "lucide-react";
+import {
+  Calendar, TrendingUp, Receipt, Calculator, Percent, Banknote, ChevronDown,
+  ArrowDownToLine, ArrowUpFromLine,
+} from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import PayoutFlow from "@/components/PayoutFlow";
 
 const dateRanges = ["Today", "This Week", "This Month", "All time"] as const;
 
@@ -41,14 +44,12 @@ const COMMISSION_RATE = 0.10;
 const Earnings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [selectedRange, setSelectedRange] = useState<string>("This Week");
   const [filterOpen, setFilterOpen] = useState(false);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
-  const [requesting, setRequesting] = useState(false);
+  const [payoutOpen, setPayoutOpen] = useState(false);
 
   const refresh = async () => {
     if (!user) return;
@@ -63,84 +64,6 @@ const Earnings = () => {
 
   useEffect(() => { refresh(); }, [user]);
 
-  // Demo helper: simulate a sale so vendors can see commission deduction in action
-  const simulateSale = async () => {
-    if (!user) return;
-    setSeeding(true);
-    const gross = 5000 + Math.floor(Math.random() * 8000);
-    const commission = Math.round(gross * COMMISSION_RATE * 100) / 100;
-    const net = gross - commission;
-
-    const { error: txError } = await supabase.from("transactions").insert({
-      user_id: user.id,
-      type: "sale",
-      status: "completed",
-      gross_amount: gross,
-      commission_rate: COMMISSION_RATE,
-      commission_amount: commission,
-      net_amount: net,
-      sender: "Customer",
-      receiver: "Vendor Wallet",
-      description: "Simulated sale (demo)",
-    });
-
-    if (!txError) {
-      const newAvail = (wallet?.available_balance ?? 0) + net;
-      const newLife = (wallet?.lifetime_earnings ?? 0) + net;
-      await supabase.from("wallets").update({
-        available_balance: newAvail,
-        lifetime_earnings: newLife,
-      }).eq("user_id", user.id);
-
-      await supabase.from("notifications").insert({
-        user_id: user.id,
-        type: "payment",
-        title: `Sale received: ${formatNgn(net)}`,
-        description: `${formatNgn(gross)} − ${formatNgn(commission)} commission`,
-        link: "/earnings",
-      });
-
-      toast({ title: "Sale recorded", description: `${formatNgn(net)} added to wallet` });
-      await refresh();
-    }
-    setSeeding(false);
-  };
-
-  const requestPayout = async () => {
-    if (!user || !wallet || wallet.available_balance <= 0) return;
-    setRequesting(true);
-    const amount = wallet.available_balance;
-
-    const { data: txn } = await supabase.from("transactions").insert({
-      user_id: user.id,
-      type: "payout",
-      status: "pending",
-      gross_amount: amount,
-      commission_amount: 0,
-      net_amount: amount,
-      sender: "Vendor Wallet",
-      receiver: "Bank Account",
-      description: "Manual payout request",
-    }).select().single();
-
-    await supabase.from("wallets").update({
-      available_balance: 0,
-      pending_balance: (wallet.pending_balance ?? 0) + amount,
-    }).eq("user_id", user.id);
-
-    await supabase.from("notifications").insert({
-      user_id: user.id,
-      type: "payment",
-      title: `Payout requested: ${formatNgn(amount)}`,
-      description: "Funds will arrive within 24 hours.",
-      link: txn ? `/earnings/transactions/${txn.id}` : "/earnings",
-    });
-
-    toast({ title: "Payout requested", description: `${formatNgn(amount)} is on its way.` });
-    await refresh();
-    setRequesting(false);
-  };
-
   const today = new Date().toDateString();
   const dailyEarnings = transactions
     .filter((t) => t.type === "sale" && new Date(t.created_at).toDateString() === today)
@@ -150,6 +73,8 @@ const Earnings = () => {
   const totalCount = totalSales.length;
   const avgOrder = totalCount ? totalSales.reduce((s, t) => s + Number(t.net_amount), 0) / totalCount : 0;
   const totalCommission = totalSales.reduce((s, t) => s + Number(t.commission_amount), 0);
+
+  const canPayout = !!wallet && wallet.available_balance > 0;
 
   return (
     <div className="pb-24">
@@ -198,18 +123,16 @@ const Earnings = () => {
               <p className="text-sm font-bold text-secondary-foreground">{formatNgn(wallet?.pending_balance ?? 0)}</p>
             </div>
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3">
             <Button
               size="sm"
               variant="default"
-              onClick={requestPayout}
-              disabled={requesting || !wallet || wallet.available_balance <= 0}
-              className="flex-1"
+              onClick={() => setPayoutOpen(true)}
+              disabled={!canPayout}
+              className="w-full"
             >
-              {requesting ? "Requesting…" : "Request Payout"}
-            </Button>
-            <Button size="sm" variant="outline" onClick={simulateSale} disabled={seeding} className="gap-1.5">
-              <Plus size={14} /> Sale
+              <ArrowUpFromLine size={14} className="mr-1.5" />
+              Withdraw
             </Button>
           </div>
         </div>
@@ -258,7 +181,7 @@ const Earnings = () => {
           <div className="rounded-2xl bg-card p-6 text-center shadow-sm">
             <Banknote size={28} className="mx-auto mb-2 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">No transactions yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">Tap "Sale" above to simulate one.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Sales and payouts will appear here.</p>
           </div>
         ) : (
           <ul className="space-y-2">
@@ -308,6 +231,13 @@ const Earnings = () => {
       <p className="mt-5 text-center text-xs text-muted-foreground px-4">
         Commission ({Math.round(COMMISSION_RATE * 100)}%) is deducted automatically before payout.
       </p>
+
+      <PayoutFlow
+        open={payoutOpen}
+        onClose={() => setPayoutOpen(false)}
+        availableBalance={wallet?.available_balance ?? 0}
+        onComplete={refresh}
+      />
     </div>
   );
 };
