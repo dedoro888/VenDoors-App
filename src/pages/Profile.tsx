@@ -160,7 +160,7 @@ const Profile = () => {
               onClick={() => navigate("/profile/packages")}
               className={cn(
                 "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-                subscription.plan.tier === "premium" && "bg-amber-500/15 text-amber-600",
+                subscription.plan.tier === "premium" && "bg-warning/15 text-warning",
                 subscription.plan.tier === "pro" && "bg-primary/15 text-primary",
                 subscription.plan.tier === "standard" && "bg-muted text-muted-foreground"
               )}
