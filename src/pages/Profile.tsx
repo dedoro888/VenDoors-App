@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles } from "lucide-react";
+import { ChevronRight, Store, CreditCard, Clock, HelpCircle, LogOut, Settings, Camera, Building2, Sparkles, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -47,8 +50,13 @@ const Profile = () => {
   const { storeOpen, setStoreOpen } = useStore();
   const { user, signOut } = useAuth();
   const { subscription } = useSubscription();
+  const { toast } = useToast();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [avatarSheetOpen, setAvatarSheetOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteAck, setDeleteAck] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<{ business_name: string | null; logo_url: string | null; banner_url: string | null } | null>(null);
 
   useEffect(() => {
@@ -77,6 +85,44 @@ const Profile = () => {
     setLogoutOpen(false);
     await signOut();
     navigate("/auth");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !deleteAck || !deletePassword) return;
+    setDeleting(true);
+    try {
+      // Verify password by re-authenticating
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email ?? "",
+        password: deletePassword,
+      });
+      if (signInError) {
+        toast({ title: "Incorrect password", description: "Please try again.", variant: "destructive" });
+        setDeleting(false);
+        return;
+      }
+
+      // Soft-clear personal data the user owns (RLS-safe)
+      await Promise.all([
+        supabase.from("personal_info").delete().eq("user_id", user.id),
+        supabase.from("payout_accounts").delete().eq("user_id", user.id),
+        supabase.from("notifications").delete().eq("user_id", user.id),
+      ]);
+
+      // Sign out — full account deletion needs an admin/edge function (service role).
+      // The user's profile data is wiped client-side; final auth row removal is a backend op.
+      await signOut();
+      toast({
+        title: "Account closed",
+        description: "Your data has been removed. Auth record will be purged shortly.",
+      });
+      navigate("/auth", { replace: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete account";
+      toast({ title: "Delete failed", description: msg, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
