@@ -234,6 +234,23 @@ const Profile = () => {
           </div>
           <p className="text-sm font-medium text-destructive">Log Out</p>
         </button>
+
+        <button
+          onClick={() => {
+            setDeletePassword("");
+            setDeleteAck(false);
+            setDeleteOpen(true);
+          }}
+          className="flex w-full items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 active:bg-destructive/10 transition-colors"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/15">
+            <Trash2 size={18} className="text-destructive" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-destructive">Delete Account</p>
+            <p className="text-[10px] text-destructive/70">Permanently remove your data</p>
+          </div>
+        </button>
       </div>
 
       {/* Avatar Bottom Sheet */}
@@ -269,6 +286,58 @@ const Profile = () => {
           <DialogFooter className="flex-row gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setLogoutOpen(false)}>Cancel</Button>
             <Button variant="destructive" className="flex-1" onClick={handleLogout}>Log Out</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Confirmation */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Account?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete your account? This will remove your business data,
+              payout details, and notifications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-xs text-destructive">
+              ⚠️ This action cannot be undone.
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="del-pw" className="text-xs">Confirm your password</Label>
+              <Input
+                id="del-pw"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteAck}
+                onChange={(e) => setDeleteAck(e.target.checked)}
+                className="mt-0.5 accent-destructive"
+              />
+              <span className="text-xs text-foreground">
+                I understand this action is permanent and cannot be reversed.
+              </span>
+            </label>
+          </div>
+          <DialogFooter className="flex-row gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              disabled={!deleteAck || !deletePassword || deleting}
+              onClick={handleDeleteAccount}
+            >
+              {deleting ? "Deleting…" : "Delete Forever"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
