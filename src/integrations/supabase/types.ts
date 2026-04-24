@@ -328,8 +328,33 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_pins: {
+        Row: {
+          created_at: string
+          id: string
+          pin_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
+          bank_account_snapshot: Json | null
           commission_amount: number
           commission_rate: number
           created_at: string
@@ -338,6 +363,7 @@ export type Database = {
           id: string
           net_amount: number
           order_id: string | null
+          payout_account_id: string | null
           receiver: string | null
           reference: string
           sender: string | null
@@ -346,6 +372,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank_account_snapshot?: Json | null
           commission_amount?: number
           commission_rate?: number
           created_at?: string
@@ -354,6 +381,7 @@ export type Database = {
           id?: string
           net_amount?: number
           order_id?: string | null
+          payout_account_id?: string | null
           receiver?: string | null
           reference?: string
           sender?: string | null
@@ -362,6 +390,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank_account_snapshot?: Json | null
           commission_amount?: number
           commission_rate?: number
           created_at?: string
@@ -370,6 +399,7 @@ export type Database = {
           id?: string
           net_amount?: number
           order_id?: string | null
+          payout_account_id?: string | null
           receiver?: string | null
           reference?: string
           sender?: string | null
