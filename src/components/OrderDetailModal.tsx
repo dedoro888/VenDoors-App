@@ -209,7 +209,20 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
             </div>
           )}
 
-          {/* Rider Status - Only for delivery orders */}
+          {/* Pickup orders — no rider, just label */}
+          {isPickup && (
+            <div className="flex items-center gap-3 rounded-2xl bg-primary/5 border border-primary/20 p-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                <ShoppingBag size={16} className="text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Customer Pickup</p>
+                <p className="text-[11px] text-muted-foreground">No rider assignment needed</p>
+              </div>
+            </div>
+          )}
+
+          {/* Rider Status — Delivery only */}
           {isDelivery && (
             <button
               onClick={() => setRiderExpanded(!riderExpanded)}
@@ -225,7 +238,7 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       {order.riderStatus === "assigned" && "Rider Assigned"}
-                      {order.riderStatus === "unassigned" && "No Rider Yet"}
+                      {order.riderStatus === "unassigned" && (order.orderStatus === "ready" ? "Ready — Awaiting Rider" : "No Rider Yet")}
                       {order.riderStatus === "enroute" && "Rider En Route"}
                       {order.riderStatus === "pickedup" && "Order Picked Up"}
                       {order.riderStatus === "delivered" && "Delivered"}
@@ -253,15 +266,25 @@ const OrderDetailModal = ({ order, open, onClose, onAccept, onReject, onMarkRead
                 </div>
               )}
 
-              {order.riderStatus === "unassigned" && order.orderStatus === "accepted" && (
+              {/* Assign Rider — STRICT: only when READY + unassigned + delivery */}
+              {order.riderStatus === "unassigned" && order.orderStatus === "ready" && (
                 <div className="mt-3 pt-3 border-t border-border animate-fade-in-up">
                   <div
                     onClick={(e) => { e.stopPropagation(); onAssignRider?.(order.id); }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-lg shadow-secondary/20 active:scale-95 transition-transform"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/20 active:scale-95 transition-transform animate-soft-fade"
                   >
                     <Users size={14} />
-                    Appoint Rider
+                    Assign Rider
                   </div>
+                </div>
+              )}
+
+              {/* Hint when not yet ready */}
+              {order.riderStatus === "unassigned" && order.orderStatus === "accepted" && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Order must be marked as ready before assigning a rider.
+                  </p>
                 </div>
               )}
             </button>
