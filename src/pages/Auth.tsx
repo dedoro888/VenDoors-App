@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, Store, Mail, Lock, User, Phone, Building2, ArrowLeft } from "lucide-react";
+import { Loader2, Store, Mail, Lock, User, Phone, Building2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AddressPicker, { AddressValue } from "@/components/AddressPicker";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +21,13 @@ const Auth = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [mode, setMode] = useState<Mode>("signin");
-  const [signupStep, setSignupStep] = useState<1 | 2>(1); // 1 = business, 2 = personal + creds
+  const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [address, setAddress] = useState<AddressValue>({ address: "", lat: null, lng: null });
   const [form, setForm] = useState({
     // Business
     businessName: "",
@@ -36,6 +42,7 @@ const Auth = () => {
     // Credentials
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const from = (location.state as { from?: string } | null)?.from || "/dashboard";
@@ -56,7 +63,6 @@ const Auth = () => {
         return;
       }
 
-      // Email needs verification or phone needs verification?
       const emailOk = Boolean(user.email_confirmed_at) || data?.business_email_verified;
       const phoneOk = data?.personal_phone_verified;
       if (!emailOk || !phoneOk) {
@@ -64,7 +70,6 @@ const Auth = () => {
         return;
       }
 
-      // Otherwise jump into wizard
       navigate("/setup/payout", { replace: true });
     })();
     return () => {
@@ -102,6 +107,10 @@ const Auth = () => {
       toast({ title: "Business name is required", variant: "destructive" });
       return;
     }
+    if (!address.address.trim()) {
+      toast({ title: "Business address is required", variant: "destructive" });
+      return;
+    }
     setSignupStep(2);
   };
 
@@ -109,6 +118,18 @@ const Auth = () => {
     e.preventDefault();
     if (!form.firstName.trim() || !form.lastName.trim() || !form.personalPhone.trim()) {
       toast({ title: "Please fill in required fields", variant: "destructive" });
+      return;
+    }
+    if (form.password.length < 6) {
+      toast({ title: "Password too short", description: "Use at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      toast({ title: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    if (!agreed) {
+      toast({ title: "Please accept the Terms & Privacy Policy", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -126,7 +147,6 @@ const Auth = () => {
       });
       if (error) throw error;
 
-      // Persist personal info + legitimacy fields
       if (data.user) {
         await Promise.all([
           supabase.from("personal_info").upsert(
@@ -145,6 +165,9 @@ const Auth = () => {
               business_registered: form.businessRegistered,
               is_owner: form.isOwner,
               phone: form.businessPhone || null,
+              business_address: address.address,
+              business_lat: address.lat,
+              business_lng: address.lng,
             })
             .eq("user_id", data.user.id),
         ]);
@@ -217,7 +240,12 @@ const Auth = () => {
         {mode === "signin" && (
           <form onSubmit={handleSignIn} className="space-y-3">
             <FieldEmail value={form.email} onChange={(v) => update("email", v)} />
-            <FieldPassword value={form.password} onChange={(v) => update("password", v)} />
+            <FieldPassword
+              value={form.password}
+              onChange={(v) => update("password", v)}
+              show={showPassword}
+              onToggleShow={() => setShowPassword((s) => !s)}
+            />
             <Button type="submit" disabled={submitting} className="w-full mt-2">
               {submitting ? <Loader2 size={16} className="animate-spin" /> : "Sign In"}
             </Button>
@@ -232,6 +260,9 @@ const Auth = () => {
               value={form.businessName} onChange={(v) => update("businessName", v)}
               placeholder="Amaka's Kitchen"
             />
+
+            <AddressPicker value={address} onChange={setAddress} />
+
             <Field
               id="businessPhone" label="Business Phone (optional)" type="tel" icon={Phone}
               value={form.businessPhone} onChange={(v) => update("businessPhone", v)}
@@ -294,11 +325,44 @@ const Auth = () => {
             <div className="h-px bg-border my-2" />
 
             <FieldEmail value={form.email} onChange={(v) => update("email", v)} label="Business Email" hint="Primary verification." />
-            <FieldPassword value={form.password} onChange={(v) => update("password", v)} />
+            <FieldPassword
+              value={form.password}
+              onChange={(v) => update("password", v)}
+              show={showPassword}
+              onToggleShow={() => setShowPassword((s) => !s)}
+            />
+            <FieldPassword
+              id="confirmPassword"
+              label="Confirm Password"
+              value={form.confirmPassword}
+              onChange={(v) => update("confirmPassword", v)}
+              show={showConfirm}
+              onToggleShow={() => setShowConfirm((s) => !s)}
+            />
 
             <Button type="submit" disabled={submitting} className="w-full mt-2">
               {submitting ? <Loader2 size={16} className="animate-spin" /> : "Create Account"}
             </Button>
+
+            <label className="flex items-start gap-2 pt-1 cursor-pointer">
+              <Checkbox
+                id="agree"
+                checked={agreed}
+                onCheckedChange={(v) => setAgreed(v === true)}
+                className="mt-0.5"
+              />
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                I agree to the{" "}
+                <a href="/terms" target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2">
+                  Terms &amp; Conditions
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
           </form>
         )}
 
@@ -345,8 +409,45 @@ const Field = ({
 const FieldEmail = ({ value, onChange, label = "Email", hint }: { value: string; onChange: (v: string) => void; label?: string; hint?: string }) => (
   <Field id="email" label={label} required type="email" icon={Mail} value={value} onChange={onChange} placeholder="vendor@vendoor.com" hint={hint} />
 );
-const FieldPassword = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-  <Field id="password" label="Password" required type="password" icon={Lock} value={value} onChange={onChange} placeholder="••••••••" />
+
+const FieldPassword = ({
+  value,
+  onChange,
+  show,
+  onToggleShow,
+  id = "password",
+  label = "Password",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggleShow: () => void;
+  id?: string;
+  label?: string;
+}) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={id} className="text-xs">{label}</Label>
+    <div className="relative">
+      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        id={id}
+        required
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="••••••••"
+        className="pl-9 pr-10"
+      />
+      <button
+        type="button"
+        onClick={onToggleShow}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground active:bg-muted"
+      >
+        {show ? <EyeOff size={14} /> : <Eye size={14} />}
+      </button>
+    </div>
+  </div>
 );
 
 const YesNoRow = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
