@@ -36,7 +36,10 @@ const PerformanceMetrics = () => {
       </div>
       <div className="grid grid-cols-3 gap-2.5">
         {/* Avg Rating */}
-        <div className="animate-fade-in-up stagger-1 rounded-2xl bg-card p-3 shadow-sm border border-border/50 active:scale-[0.98] transition-transform">
+        <button
+          onClick={() => navigate("/insights/reviews")}
+          className="text-left animate-fade-in-up stagger-1 rounded-2xl bg-card p-3 shadow-sm border border-border/50 active:scale-[0.98] transition-transform"
+        >
           <div className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-warning/15">
             <Star size={14} className="text-warning" fill="currentColor" />
           </div>
@@ -46,7 +49,7 @@ const PerformanceMetrics = () => {
           </p>
           <p className="mt-1 text-[10px] font-medium text-foreground leading-tight">Avg Rating</p>
           <p className="text-[9px] text-muted-foreground mt-0.5">({MOCK_METRICS.reviewCount} reviews)</p>
-        </div>
+        </button>
 
         {/* Total Orders */}
         <div className="animate-fade-in-up stagger-2 rounded-2xl bg-card p-3 shadow-sm border border-border/50 active:scale-[0.98] transition-transform">
@@ -83,7 +86,10 @@ const PerformanceMetrics = () => {
         </div>
 
         {/* Regional Rank */}
-        <div className="animate-fade-in-up stagger-3 rounded-2xl bg-card p-3 shadow-sm border border-border/50 active:scale-[0.98] transition-transform">
+        <button
+          onClick={() => navigate("/insights/rankings")}
+          className="text-left animate-fade-in-up stagger-3 rounded-2xl bg-card p-3 shadow-sm border border-border/50 active:scale-[0.98] transition-transform"
+        >
           <div className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-success/15">
             <Trophy size={14} className="text-success" />
           </div>
@@ -94,7 +100,7 @@ const PerformanceMetrics = () => {
             in {MOCK_METRICS.region}
           </p>
           <p className="text-[9px] text-success mt-0.5 font-medium">Top {MOCK_METRICS.percentile}%</p>
-        </div>
+        </button>
       </div>
     </div>
   );
