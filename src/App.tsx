@@ -28,6 +28,8 @@ import PayoutSettings from "./pages/PayoutSettings";
 import HelpSupport from "./pages/HelpSupport";
 import AppSettings from "./pages/AppSettings";
 import Packages from "./pages/Packages";
+import Rankings from "./pages/Rankings";
+import Reviews from "./pages/Reviews";
 import SetupLayout from "./pages/setup/SetupLayout";
 import SetupPayout from "./pages/setup/SetupPayout";
 import SetupBusiness from "./pages/setup/SetupBusiness";
@@ -88,6 +90,8 @@ const App = () => (
                 <Route path="/profile/packages" element={<Protected><Packages /></Protected>} />
                 <Route path="/profile/help-support" element={<Protected><HelpSupport /></Protected>} />
                 <Route path="/profile/app-settings" element={<Protected><AppSettings /></Protected>} />
+                <Route path="/insights/rankings" element={<Protected><Rankings /></Protected>} />
+                <Route path="/insights/reviews" element={<Protected><Reviews /></Protected>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <BottomNav />

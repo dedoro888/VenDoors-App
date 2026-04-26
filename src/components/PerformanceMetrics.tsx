@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Star, Package, Trophy, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const MOCK_METRICS = {
 };
 
 const PerformanceMetrics = () => {
+  const navigate = useNavigate();
   const [range, setRange] = useState<OrderRange>("lifetime");
   const [rangeOpen, setRangeOpen] = useState(false);
 
