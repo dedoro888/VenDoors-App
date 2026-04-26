@@ -5,6 +5,7 @@ import WeeklyChart from "@/components/WeeklyChart";
 import NotificationBell from "@/components/NotificationBell";
 import StoreStatusIndicator from "@/components/StoreStatusIndicator";
 import SetupChecklist from "@/components/SetupChecklist";
+import PerformanceMetrics from "@/components/PerformanceMetrics";
 import { useStore } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,9 @@ const Dashboard = () => {
 
       {/* Setup Checklist (only shows if setup not completed) */}
       <SetupChecklist />
+
+      {/* Business Insights — Avg Rating, Orders, Regional Rank */}
+      <PerformanceMetrics />
 
       {/* Store Status */}
       <div className="px-4 mt-4">
