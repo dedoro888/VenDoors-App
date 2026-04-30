@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar, TrendingUp, Receipt, Calculator, Percent, Banknote, ChevronDown,
-  ArrowDownToLine, ArrowUpFromLine,
+  ArrowDownToLine, ArrowUpFromLine, Wifi,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -106,35 +106,78 @@ const Earnings = () => {
         </Popover>
       </div>
 
-      {/* Wallet Card */}
+      {/* Wallet Card — Bank Card Style */}
       <div className="px-4">
-        <div className="neon-card animate-fade-in-up rounded-2xl bg-secondary p-5 shadow-sm">
-          <p className="text-xs font-medium text-secondary-foreground/60">Available Balance</p>
-          <p className="mt-1 text-3xl font-bold text-secondary-foreground tabular-nums">
-            {loading ? "—" : formatNgn(wallet?.available_balance ?? 0)}
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-3 text-left">
-            <div className="rounded-xl bg-secondary-foreground/10 p-2.5">
-              <p className="text-[10px] text-secondary-foreground/60">Today</p>
-              <p className="text-sm font-bold text-secondary-foreground">{formatNgn(dailyEarnings)}</p>
+        <div className="neon-card bank-card animate-fade-in-up relative overflow-hidden rounded-2xl p-5 shadow-xl">
+          {/* Decorative orbs */}
+          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-primary/20 blur-3xl" />
+
+          {/* Top row: brand + contactless */}
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-foreground/70">
+                VenDoor
+              </p>
+              <p className="text-[10px] font-medium text-secondary-foreground/50">Vendor Wallet</p>
             </div>
-            <div className="rounded-xl bg-secondary-foreground/10 p-2.5">
-              <p className="text-[10px] text-secondary-foreground/60">Pending</p>
-              <p className="text-sm font-bold text-secondary-foreground">{formatNgn(wallet?.pending_balance ?? 0)}</p>
+            <Wifi size={20} className="rotate-90 text-secondary-foreground/70" />
+          </div>
+
+          {/* Chip */}
+          <div className="relative mt-5 flex items-center gap-3">
+            <div className="h-9 w-12 rounded-md bg-gradient-to-br from-yellow-200 via-yellow-400 to-yellow-600 shadow-inner relative overflow-hidden">
+              <div className="absolute inset-1 grid grid-cols-3 grid-rows-3 gap-[2px]">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="rounded-[1px] bg-yellow-700/40" />
+                ))}
+              </div>
+            </div>
+            <div className="h-7 w-7 rounded-full bg-primary/30 backdrop-blur" />
+          </div>
+
+          {/* Balance as card "number" */}
+          <div className="relative mt-5">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-secondary-foreground/60">
+              Available Balance
+            </p>
+            <p className="mt-1 text-3xl font-bold text-secondary-foreground tabular-nums tracking-wide">
+              {loading ? "—" : formatNgn(wallet?.available_balance ?? 0)}
+            </p>
+          </div>
+
+          {/* Bottom row: holder + valid thru */}
+          <div className="relative mt-5 flex items-end justify-between">
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-wider text-secondary-foreground/50">
+                Card Holder
+              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary-foreground truncate max-w-[150px]">
+                {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Vendor"}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[9px] font-medium uppercase tracking-wider text-secondary-foreground/50">
+                Today / Pending
+              </p>
+              <p className="text-xs font-semibold text-secondary-foreground tabular-nums">
+                {formatNgn(dailyEarnings)} · {formatNgn(wallet?.pending_balance ?? 0)}
+              </p>
             </div>
           </div>
-          <div className="mt-3">
-            <Button
-              size="sm"
-              variant="default"
-              onClick={() => setPayoutOpen(true)}
-              disabled={!canPayout}
-              className="w-full"
-            >
-              <ArrowUpFromLine size={14} className="mr-1.5" />
-              Withdraw
-            </Button>
-          </div>
+        </div>
+
+        <div className="mt-3">
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => setPayoutOpen(true)}
+            disabled={!canPayout}
+            className="w-full"
+          >
+            <ArrowUpFromLine size={14} className="mr-1.5" />
+            Withdraw
+          </Button>
         </div>
       </div>
 
