@@ -108,7 +108,7 @@ const Earnings = () => {
 
       {/* Wallet Card */}
       <div className="px-4">
-        <div className="animate-fade-in-up rounded-2xl bg-secondary p-5 shadow-sm">
+        <div className="neon-card animate-fade-in-up rounded-2xl bg-secondary p-5 shadow-sm">
           <p className="text-xs font-medium text-secondary-foreground/60">Available Balance</p>
           <p className="mt-1 text-3xl font-bold text-secondary-foreground tabular-nums">
             {loading ? "—" : formatNgn(wallet?.available_balance ?? 0)}
