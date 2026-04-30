@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar, TrendingUp, Receipt, Calculator, Percent, Banknote, ChevronDown,
-  ArrowDownToLine, ArrowUpFromLine,
+  ArrowDownToLine, ArrowUpFromLine, Wifi,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
